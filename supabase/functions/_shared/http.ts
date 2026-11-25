@@ -12,10 +12,11 @@ export function env(name: string): string {
   return v;
 }
 
-const allowedOrigin = Deno.env.get("APP_URL") ?? "*";
-
+// Any website may call these functions from a browser. That is safe: no cookies are used, every call must carry the
+// user's login token (or the cron secret / PhonePe signature), and that is what's checked. Allowing every origin lets
+// localhost, the GitHub Pages demo and the real domain all work. APP_URL is only used for links in emails/redirects.
 export const corsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": allowedOrigin,
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   Vary: "Origin",

@@ -71,6 +71,14 @@ Step by step, from empty accounts to a live shop. Do it first with a **dev** Sup
    npx supabase@latest functions deploy
    ```
    `payment-webhook`, `payments-reconcile` and `email-worker` deploy without JWT checks (see `supabase/config.toml`). They verify their own secrets.
+
+   To deploy only the staff function (Admin → Staff → "Add a staff member" needs it):
+   ```bash
+   npx supabase@latest functions deploy staff-create
+   ```
+   It needs no secrets of its own: Supabase gives every function `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` automatically.
+
+   Product photos are stored in Supabase Storage (bucket `product-images`, created by migration 0010), so Cloudflare R2 is optional.
 3. Let the scheduler call the workers. In SQL Editor:
    ```sql
    select vault.create_secret('https://<project-ref>.supabase.co', 'project_url');

@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.email-worker]
 verify_jwt = false
+
+[functions.staff-create]
+verify_jwt = false

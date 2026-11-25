@@ -31,6 +31,13 @@ const MESSAGES: Record<string, string> = {
   STORE_ALREADY_CLAIMED: "This store already has an owner. Ask them to add you in Admin → Staff.",
   UNSUPPORTED_IMAGE_TYPE: "Use a JPG, PNG or WebP image.",
   IMAGE_TOO_LARGE: "Image is too large (max 2 MB).",
+  WEAK_PASSWORD: "Password must be at least 8 characters.",
+  INVALID_EMAIL: "Please enter a valid email address.",
+  EMAIL_TAKEN: "That email already has an account.",
+  INVALID_REQUEST: "Something in the form isn't right. Please check and try again.",
+  FUNCTION_UNREACHABLE: "Couldn't reach the server function. It is probably not deployed yet: run “npx supabase@latest functions deploy” (see docs/SETUP.md).",
+  "HTTP_404":"This feature isn't switched on yet: the server function hasn't been deployed (see docs/SETUP.md).",
+  "Bucket not found": "Photo storage isn't set up yet: run the latest database update (npx supabase@latest db push --remote).",
 };
 
 export function friendlyError(e: unknown): string {

@@ -54,11 +54,24 @@ export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
   },
 });
 
+/**
+ * fetch() to an Edge Function. A browser reports "Failed to fetch" both when the phone is offline and when the
+ * function isn't deployed / blocks the request, so tell those apart instead of always saying "no internet".
+ */
+async function reach(name: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(`${url}/functions/v1/${name}`, init);
+  } catch (e) {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) throw e;
+    throw new Error("FUNCTION_UNREACHABLE");
+  }
+}
+
 /** Calls one of our Edge Functions with the user's login token. Throws Error(code) on failure. */
 export async function callFunction<T>(name: string, body: unknown): Promise<T> {
   const { data: session } = await supabase.auth.getSession();
   const token = session.session?.access_token;
-  const res = await fetch(`${url}/functions/v1/${name}`, {
+  const res = await reach(name, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -77,7 +90,7 @@ export async function uploadToFunction<T>(name: string, file: Blob, filename: st
   const { data: session } = await supabase.auth.getSession();
   const form = new FormData();
   form.append("file", file, filename);
-  const res = await fetch(`${url}/functions/v1/${name}`, {
+  const res = await reach(name, {
     method: "POST",
     headers: { apikey: key ?? "", Authorization: `Bearer ${session.session?.access_token ?? ""}` },
     body: form,
