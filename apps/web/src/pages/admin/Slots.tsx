@@ -113,7 +113,7 @@ export default function Slots() {
                   <td>{time12(s.start_time)}–{time12(s.end_time)}</td>
                   <td>{s.booked}</td>
                   <td>
-                    <input className="w-16 rounded border border-line px-1 py-0.5" defaultValue={s.capacity} inputMode="numeric"
+                    <input className="w-20 rounded-xl border border-line px-2 py-1.5 text-base" defaultValue={s.capacity} inputMode="numeric"
                       onBlur={(e) => Number(e.target.value) !== s.capacity && act(() => supabase.from("delivery_slots").update({ capacity: Number(e.target.value) }).eq("id", s.id), "Capacity updated.")} />
                   </td>
                   <td>{dateTime(s.cutoff_at)}</td>

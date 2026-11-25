@@ -106,4 +106,4 @@ export function Field({ label, children, hint }: { label: string; children: Reac
 }
 
 export const inputClass =
-  "w-full rounded-2xl border-0 bg-surface px-4 py-3 text-base text-ink ring-1 ring-inset ring-line placeholder:text-ink-muted/70 outline-none transition focus:bg-white focus:ring-2 focus:ring-brand";
+  "w-full min-w-0 rounded-2xl border-0 bg-surface px-4 py-3 text-base text-ink ring-1 ring-inset ring-line placeholder:text-ink-muted/70 outline-none transition focus:bg-white focus:ring-2 focus:ring-brand";

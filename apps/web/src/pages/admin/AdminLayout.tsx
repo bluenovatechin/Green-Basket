@@ -87,9 +87,9 @@ export default function AdminLayout() {
           <button className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-surface lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
             <Icon name="menu" size={22} />
           </button>
-          <div className="flex items-center gap-2 lg:w-64 lg:px-6">
+          <div className="flex min-w-0 items-center gap-2 lg:w-64 lg:px-6">
             <Logo to={`${ADMIN_PATH}`} />
-            <span className="rounded-full bg-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">Admin</span>
+            <span className="hidden rounded-full bg-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white sm:inline">Admin</span>
           </div>
         </div>
         <div className="flex items-center gap-2">

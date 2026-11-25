@@ -95,6 +95,10 @@ export default function CustomerLayout() {
   const { session } = useAuth();
   const location = useLocation();
   const showCartBar = count > 0 && !["/cart", "/checkout"].includes(location.pathname) && !location.pathname.startsWith("/login");
+  // Checkout is a focused flow with its own fixed "Place order" bar, so the tab bar steps aside there
+  const showTabs = location.pathname !== "/checkout";
+  // Space at the bottom of every page so fixed bars (tabs: 64px, basket bar: ~56px) never cover content
+  const bottomSpace = !showTabs ? "pb-28" : showCartBar ? "pb-[calc(9.5rem+env(safe-area-inset-bottom))]" : "pb-[calc(5.5rem+env(safe-area-inset-bottom))]";
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -104,7 +108,7 @@ export default function CustomerLayout() {
     `inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold transition ${isActive ? "bg-white text-ink shadow-soft" : "text-ink-soft hover:text-ink"}`;
 
   return (
-    <div className="min-h-screen pb-32 sm:pb-12">
+    <div className={`min-h-screen ${bottomSpace} sm:pb-12`}>
       <header className="sticky top-0 z-40 border-b border-line/70 bg-surface/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
           <Logo />
@@ -131,7 +135,7 @@ export default function CustomerLayout() {
       {showCartBar && (
         <Link
           to="/cart"
-          className="fixed inset-x-3 bottom-[76px] z-40 flex items-center justify-between rounded-full bg-ink py-2 pl-2 pr-5 text-white shadow-lift sm:hidden"
+          className="fixed inset-x-3 bottom-[calc(76px+env(safe-area-inset-bottom))] z-40 flex items-center justify-between rounded-full bg-ink py-2 pl-2 pr-5 text-white shadow-lift sm:hidden"
         >
           <span className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10"><Icon name="bag" size={18} /></span>
@@ -144,21 +148,21 @@ export default function CustomerLayout() {
         </Link>
       )}
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden">
-        <div className="grid grid-cols-4">
+      {showTabs && <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden">
+        <div className="grid h-16 grid-cols-4">
           <Tab to="/" end icon="home" label="Shop" />
           <Tab to="/cart" icon="bag" label="Basket" badge={count} />
           <Tab to="/orders" icon="package" label="Orders" />
           <Tab to={session ? "/account" : "/login"} icon="user" label={session ? "Account" : "Log in"} />
         </div>
-      </nav>
+      </nav>}
     </div>
   );
 }
 
 function Tab({ to, icon, label, badge, end }: { to: string; icon: IconName; label: string; badge?: number; end?: boolean }) {
   return (
-    <NavLink to={to} end={end} className={({ isActive }) => `flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold ${isActive ? "text-brand" : "text-ink-muted"}`}>
+    <NavLink to={to} end={end} className={({ isActive }) => `flex flex-col items-center justify-center gap-1 text-[11px] font-semibold ${isActive ? "text-brand" : "text-ink-muted"}`}>
       <span className="relative">
         <Icon name={icon} size={22} />
         {!!badge && <span className="absolute -right-2.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-white">{badge}</span>}

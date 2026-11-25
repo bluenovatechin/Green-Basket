@@ -35,7 +35,7 @@ export default function Cart() {
   const freePct = bill.settings ? Math.min(100, (cart.subtotal / bill.settings.free_delivery_above) * 100) : 0;
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-6 pb-24 lg:grid-cols-[1fr_360px]">
+    <div className="mx-auto grid max-w-5xl gap-6 pb-20 lg:grid-cols-[1fr_360px] lg:pb-0">
       <div className="space-y-4">
         <div className="flex items-end justify-between">
           <div>
@@ -90,7 +90,7 @@ export default function Cart() {
       </div>
 
       {/* mobile sticky CTA */}
-      <div className="fixed inset-x-0 bottom-[68px] z-30 bg-gradient-to-t from-surface via-surface to-transparent px-4 pb-3 pt-6 lg:hidden">
+      <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-30 bg-gradient-to-t from-surface via-surface to-transparent px-4 pb-3 pt-6 sm:bottom-0 lg:hidden">
         <Button size="lg" className="w-full justify-between pl-6 pr-5" disabled={bill.belowMin} onClick={() => navigate("/checkout")}>
           <span className="tabular">{rupees(bill.total)}</span>
           <span className="flex items-center gap-1">Checkout <Icon name="arrowRight" size={18} /></span>

@@ -78,7 +78,7 @@ export default function AdminOrderDetail() {
             {o.customer_note && <p className="mt-1 rounded-lg bg-amber-50 p-2 text-sm">Note: {o.customer_note}</p>}
             <p className="mt-1 text-sm"><b>Payment:</b> {o.payment_method === "cod" ? `Collect ${rupees(o.total)} (cash/UPI)` : "Paid online"} · {o.payment_status}</p>
 
-            <table className="mt-3 w-full text-sm">
+            <div className="-mx-1 mt-3 overflow-x-auto px-1"><table className="w-full min-w-[320px] text-sm">
               <thead className="text-left text-ink-muted"><tr><th className="py-1">Item</th><th>Qty</th><th className="text-right">Amount</th><th className="no-print" /></tr></thead>
               <tbody className="divide-y divide-line">
                 {o.order_items?.map((i) => (
@@ -98,7 +98,7 @@ export default function AdminOrderDetail() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
             <div className="mt-2 text-right text-sm">
               Items {rupees(o.subtotal)} · Delivery {rupees(o.delivery_fee)} · <b>Total {rupees(o.total)}</b>
               {Number(o.refunded_amount) > 0 && <div className="text-sky-700">Refunded/refunding {rupees(o.refunded_amount)}</div>}

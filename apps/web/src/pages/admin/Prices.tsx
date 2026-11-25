@@ -55,7 +55,7 @@ export default function Prices() {
                   <td className="p-3">{v.label}</td>
                   <td className="p-3">{rupees(v.price)}</td>
                   <td className="p-3">
-                    <input inputMode="decimal" className="w-24 rounded-lg border border-line px-2 py-1.5"
+                    <input inputMode="decimal" className="w-24 rounded-xl border border-line px-3 py-2 text-base"
                       placeholder={String(v.price)} value={edits[v.id] ?? ""} onChange={(e) => setEdits({ ...edits, [v.id]: e.target.value })} />
                   </td>
                 </tr>

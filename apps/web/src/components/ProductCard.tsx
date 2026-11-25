@@ -5,10 +5,12 @@ import { productImage } from "../lib/images";
 import { useCart } from "../state/cart";
 import Icon from "./Icon";
 
-export function QtyStepper({ value, onChange, max, size = "md" }: { value: number; onChange: (n: number) => void; max?: number; size?: "sm" | "md" }) {
+export function QtyStepper({ value, onChange, max, size = "md", fluid = false }: { value: number; onChange: (n: number) => void; max?: number; size?: "sm" | "md"; fluid?: boolean }) {
   const h = size === "sm" ? "h-9" : "h-10";
+  // fluid (product cards): full width on phones, compact on wider screens
+  const width = fluid ? "w-full justify-between sm:w-auto sm:justify-start" : "";
   return (
-    <div className={`flex ${h} items-center rounded-full bg-brand text-white shadow-sm`}>
+    <div className={`flex ${h} ${width} items-center rounded-full bg-brand text-white shadow-sm`}>
       <button className={`flex ${h} w-9 items-center justify-center rounded-full hover:bg-white/10`} onClick={() => onChange(value - 1)} aria-label="Remove one">
         <Icon name="minus" size={16} strokeWidth={2.25} />
       </button>
@@ -79,17 +81,19 @@ export default function ProductCard({ product, maxQty }: { product: Product; max
           <p className="mt-2 text-xs font-medium text-ink-muted">{v.label}</p>
         )}
 
-        <div className="mt-auto flex items-center justify-between pt-3">
-          <div className="leading-tight">
+        {/* Phones: price on its own line and a full-width button below, so nothing collides in a narrow card.
+            Wider screens: price and button side by side. */}
+        <div className="mt-auto flex flex-col gap-2 pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-baseline gap-1.5 leading-tight sm:block">
             <div className="tabular text-base font-bold">{rupees(v.price)}</div>
             {discount > 0 && <div className="tabular text-[11px] text-ink-muted line-through">{rupees(v.mrp)}</div>}
           </div>
           {outOfStock ? null : inCart > 0 ? (
-            <QtyStepper size="sm" value={inCart} onChange={(n) => cart.setQuantity(v.id, n)} max={Math.min(maxQty, packsAvailable)} />
+            <QtyStepper size="sm" fluid value={inCart} onChange={(n) => cart.setQuantity(v.id, n)} max={Math.min(maxQty, packsAvailable)} />
           ) : (
             <button
               onClick={() => cart.add({ ...product, image_url: image }, v)}
-              className="flex h-9 items-center gap-1 rounded-full bg-brand-light px-3.5 text-sm font-bold text-brand transition hover:bg-brand hover:text-white"
+              className="flex h-9 w-full items-center justify-center gap-1 rounded-full bg-brand-light px-3.5 text-sm font-bold text-brand transition hover:bg-brand hover:text-white sm:w-auto"
               aria-label={`Add ${product.name} ${v.label}`}
             >
               <Icon name="plus" size={16} strokeWidth={2.25} /> Add
