@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { rpc } from "../../lib/api";
+import { rpc, useLiveOrders } from "../../lib/api";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../auth/AuthProvider";
 import { rupees, slotLabel, todayIST } from "../../lib/format";
@@ -10,11 +10,15 @@ import type { Order } from "../../lib/types";
 import { Button, Card, Empty, ErrorText, FullPageSpinner, StatusBadge } from "../../components/ui";
 
 // Simple phone screen for riders: today's assigned orders, call / map, start and complete delivery.
+// Subscribes to live order updates so newly assigned deliveries appear instantly.
 export default function RiderHome() {
   const { profile, signOut } = useAuth();
   const qc = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
+
+  // Live real-time push whenever orders assigned to this rider change
+  useLiveOrders(profile?.id ? `rider_id=eq.${profile.id}` : null, [["rider", "orders"]]);
 
   const orders = useQuery({
     queryKey: ["rider", "orders"],
@@ -99,7 +103,6 @@ export default function RiderHome() {
                 ) : (
                   <Button className="w-full" loading={busy === o.id + "d"} onClick={() => act(o.id + "d", () => rpc("complete_delivery", { p_order_id: o.id, p_collected_via: null }))}>Delivered</Button>
                 ))}
-                {(o.status === "placed" || o.status === "confirmed") && <p className="text-center text-sm text-gray-500">Waiting to be packed</p>}
               </Card>
             );
           })

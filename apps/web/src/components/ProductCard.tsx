@@ -18,7 +18,11 @@ export default function ProductCard({ product, maxQty }: { product: Product; max
   const [variantId, setVariantId] = useState(product.product_variants[0]?.id);
   const v = product.product_variants.find((x) => x.id === variantId) ?? product.product_variants[0];
   const inCart = cart.quantityOf(v.id);
-  const outOfStock = Number(product.stock_qty) < Number(v.pack_qty);
+  const stockQty = Number(product.stock_qty);
+  const packQty = Number(v.pack_qty);
+  const packsAvailable = packQty > 0 ? Math.floor(stockQty / packQty) : 0;
+  const outOfStock = packsAvailable <= 0;
+  const lowStock = packsAvailable > 0 && packsAvailable <= 5;
   const discount = v.mrp && v.mrp > v.price ? Math.round(((v.mrp - v.price) / v.mrp) * 100) : 0;
 
   return (
@@ -31,6 +35,11 @@ export default function ProductCard({ product, maxQty }: { product: Product; max
         )}
         {discount > 0 && (
           <span className="absolute left-2 top-2 rounded-md bg-brand-accent px-1.5 py-0.5 text-xs font-bold text-gray-900">{discount}% off</span>
+        )}
+        {lowStock && !outOfStock && (
+          <span className="absolute bottom-2 left-2 rounded-md bg-amber-500/90 px-1.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
+            Only {packsAvailable} left
+          </span>
         )}
       </div>
       <h3 className="font-semibold leading-tight">{product.name}</h3>
@@ -62,7 +71,7 @@ export default function ProductCard({ product, maxQty }: { product: Product; max
         {outOfStock ? (
           <span className="text-sm font-medium text-gray-400">Sold out</span>
         ) : inCart > 0 ? (
-          <QtyStepper value={inCart} onChange={(n) => cart.setQuantity(v.id, n)} max={maxQty} />
+          <QtyStepper value={inCart} onChange={(n) => cart.setQuantity(v.id, n)} max={Math.min(maxQty, packsAvailable)} />
         ) : (
           <button onClick={() => cart.add(product, v)} className="h-10 rounded-xl border-2 border-brand px-4 font-bold text-brand hover:bg-brand-light">
             ADD
