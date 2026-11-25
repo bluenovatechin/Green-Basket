@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import { useAuth } from "../auth/AuthProvider";
 import { useCart } from "../state/cart";
 import { rupees } from "../lib/format";
-import { asset, ADMIN_PATH } from "../lib/base";
+import { asset, ADMIN_PATH, BASE } from "../lib/base";
 import Icon, { type IconName } from "./Icon";
 
 export function Logo({ to = "/" }: { to?: string }) {
@@ -69,14 +69,24 @@ export function AccountMenu({ area = "shop" }: { area?: "shop" | "admin" }) {
             )}
           </div>
           <div className="border-t border-line pt-1.5">
-            {area === "admin" && (profile?.role === "admin" || profile?.role === "packer") && <MenuLink to={`${ADMIN_PATH}`} icon="grid" label="Admin panel" cls={item} />}
-            {(profile?.role === "rider" || (area === "admin" && profile?.role === "admin")) && <MenuLink to="/rider" icon="bike" label="Rider screen" cls={item} />}
-            <MenuLink to="/" icon="store" label="Shop" cls={item} />
-            <MenuLink to="/orders" icon="package" label="My orders" cls={item} />
-            <MenuLink to="/account" icon="user" label="Account & addresses" cls={item} />
+            {area === "admin" ? (
+              <>
+                <MenuLink to={`${ADMIN_PATH}`} icon="grid" label="Dashboard" cls={item} />
+                {/* the shop has its own separate login, so it opens in a new tab */}
+                <a role="menuitem" href={BASE} target="_blank" rel="noreferrer" className={item}><Icon name="store" size={18} />Open store in new tab</a>
+                {profile?.role === "admin" && <a role="menuitem" href={`${BASE}rider`} target="_blank" rel="noreferrer" className={item}><Icon name="bike" size={18} />Rider screen (new tab)</a>}
+              </>
+            ) : (
+              <>
+                {profile?.role === "rider" && <MenuLink to="/rider" icon="bike" label="Rider screen" cls={item} />}
+                <MenuLink to="/" icon="store" label="Shop" cls={item} />
+                <MenuLink to="/orders" icon="package" label="My orders" cls={item} />
+                <MenuLink to="/account" icon="user" label="Account & addresses" cls={item} />
+              </>
+            )}
           </div>
           <div className="mt-1 border-t border-line pt-1.5">
-            <button role="menuitem" className={`${item} text-red-600 hover:bg-red-50`} onClick={async () => { await signOut(); navigate("/"); }}>
+            <button role="menuitem" className={`${item} text-red-600 hover:bg-red-50`} onClick={async () => { await signOut(); navigate(area === "admin" ? `${ADMIN_PATH}/login` : "/"); }}>
               <Icon name="logout" size={18} /> Log out
             </button>
           </div>

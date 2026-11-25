@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { Navigate, useLocation } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "../lib/supabase";
+import { AUTH_STORAGE_KEY, OPENED_IN_ADMIN_AREA, isAdminArea, supabase } from "../lib/supabase";
 import type { Profile, Role } from "../lib/types";
 import { FullPageSpinner } from "../components/ui";
 
@@ -32,6 +32,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const userIdRef = useRef<string | null | undefined>(undefined);
+  const location = useLocation();
+
+  // A tab is bound to the area it opened in (shop or admin console), because each has its own login.
+  // If in-app navigation crosses into the other area, reload so the right login is used.
+  useEffect(() => {
+    // window.location has the full address (incl. a GitHub Pages folder); the router's pathname doesn't
+    if (isAdminArea() !== OPENED_IN_ADMIN_AREA) window.location.reload();
+  }, [location.pathname]);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -55,11 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // One browser = one logged-in person, in every tab (like Blinkit or Gmail).
-    // The login is stored once per browser; when another tab logs in, logs out or switches account,
-    // this tab picks it up immediately and reloads so it never shows the previous person's data.
+    // Shop and admin console have separate logins (see lib/supabase.ts). Within ONE area, all tabs follow the
+    // same login: when another tab of the same area logs in, logs out or switches account, this tab reloads
+    // so it never shows the previous person's data. Changes in the other area are ignored.
     const onStorage = async (e: StorageEvent) => {
-      if (e.key !== null && !/^sb-.*-auth-token$/.test(e.key)) return;
+      if (e.key !== null && e.key !== AUTH_STORAGE_KEY) return;
       const { data } = await supabase.auth.getSession();
       const id = data.session?.user.id ?? null;
       if (userIdRef.current !== undefined && id !== userIdRef.current) {

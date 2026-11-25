@@ -1,18 +1,16 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
 import { rpc } from "../lib/api";
 import { friendlyError } from "../lib/errors";
 import { Button } from "./ui";
 import Icon from "./Icon";
-import { ADMIN_PATH } from "../lib/base";
+import { ADMIN_PATH, BASE } from "../lib/base";
 
 /** Shown only on a brand-new installation that has no admin yet: the logged-in person can claim it. */
 export default function ClaimStoreBanner() {
   const { session, profile, refreshProfile } = useAuth();
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const hasAdmin = useQuery({
@@ -32,7 +30,8 @@ export default function ClaimStoreBanner() {
       await rpc("claim_store_ownership", {});
       await refreshProfile();
       await qc.invalidateQueries({ queryKey: ["store-has-admin"] });
-      navigate(`${ADMIN_PATH}`);
+      // the admin console has its own login: open it fresh (it asks for email + password)
+      window.location.assign(BASE + ADMIN_PATH.slice(1));
     } catch (e) {
       setError(friendlyError(e));
       qc.invalidateQueries({ queryKey: ["store-has-admin"] });

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { AccountMenu, Logo } from "../../components/CustomerLayout";
 import Icon, { type IconName } from "../../components/Icon";
-import { ADMIN_PATH } from "../../lib/base";
+import { ADMIN_PATH, BASE } from "../../lib/base";
 
 type NavItem = { to: string; label: string; icon: IconName; adminOnly?: boolean; end?: boolean };
 const GROUPS: { title: string; items: NavItem[] }[] = [
@@ -65,8 +65,8 @@ function Sidebar({ isAdmin }: { isAdmin: boolean }) {
         );
       })}
       <div className="mt-auto space-y-0.5 border-t border-line pt-4">
-        <Link to="/" className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-ink-soft hover:bg-surface"><Icon name="store" size={18} />View store</Link>
-        <Link to="/rider" className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-ink-soft hover:bg-surface"><Icon name="bike" size={18} />Rider screen</Link>
+        <a href={BASE} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-ink-soft hover:bg-surface"><Icon name="store" size={18} />View store ↗</a>
+        <a href={`${BASE}rider`} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-ink-soft hover:bg-surface"><Icon name="bike" size={18} />Rider screen ↗</a>
       </div>
     </nav>
   );
@@ -93,9 +93,9 @@ export default function AdminLayout() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/" className="hidden h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold text-ink-soft hover:bg-surface sm:inline-flex">
-            <Icon name="store" size={18} /> View store
-          </Link>
+          <a href={BASE} target="_blank" rel="noreferrer" className="hidden h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold text-ink-soft hover:bg-surface sm:inline-flex">
+            <Icon name="store" size={18} /> View store ↗
+          </a>
           <AccountMenu area="admin" />
         </div>
       </header>
