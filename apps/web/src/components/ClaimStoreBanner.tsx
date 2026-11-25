@@ -5,6 +5,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { rpc } from "../lib/api";
 import { friendlyError } from "../lib/errors";
 import { Button } from "./ui";
+import Icon from "./Icon";
 
 /** Shown only on a brand-new installation that has no admin yet: the logged-in person can claim it. */
 export default function ClaimStoreBanner() {
@@ -40,9 +41,9 @@ export default function ClaimStoreBanner() {
   }
 
   return (
-    <div className="mb-4 rounded-2xl border-2 border-dashed border-brand bg-brand-light p-4">
-      <div className="font-bold text-brand">🏪 This store has no owner yet</div>
-      <p className="mt-1 text-sm text-gray-700">
+    <div className="rounded-3xl border-2 border-dashed border-brand/40 bg-brand-50 p-5">
+      <div className="flex items-center gap-2 font-bold text-brand"><Icon name="store" size={18} /> This store has no owner yet</div>
+      <p className="mt-1 text-sm text-ink-soft">
         You're the first person here. Claim the store to become its admin: add products, set prices and delivery slots, and manage orders.
       </p>
       {error && <p className="mt-2 text-sm text-red-700">{error}</p>}

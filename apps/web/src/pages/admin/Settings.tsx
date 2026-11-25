@@ -72,7 +72,7 @@ export default function Settings() {
 
       <Card className="space-y-3">
         <h2 className="font-semibold">Delivery pincodes</h2>
-        <ul className="divide-y divide-gray-100 text-sm">
+        <ul className="divide-y divide-line text-sm">
           {pincodes.data?.map((p) => (
             <li key={p.pincode} className={`flex items-center justify-between py-2 ${p.is_active ? "" : "opacity-50"}`}>
               <span><b>{p.pincode}</b> · {p.area_name}</span>

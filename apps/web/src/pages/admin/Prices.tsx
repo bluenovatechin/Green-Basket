@@ -46,8 +46,8 @@ export default function Prices() {
       <h1 className="text-xl font-bold">Today's prices</h1>
       <div className="overflow-x-auto rounded-2xl bg-white">
         <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50 text-gray-600"><tr><th className="p-3">Product</th><th className="p-3">Pack</th><th className="p-3">Current</th><th className="p-3">New price ₹</th></tr></thead>
-          <tbody className="divide-y divide-gray-100">
+          <thead className="bg-surface text-ink-soft"><tr><th className="p-3">Product</th><th className="p-3">Pack</th><th className="p-3">Current</th><th className="p-3">New price ₹</th></tr></thead>
+          <tbody className="divide-y divide-line">
             {products.data!.filter((p) => p.is_active).flatMap((p) =>
               p.product_variants.filter((v) => v.is_active).sort((a, b) => a.sort_order - b.sort_order).map((v, i) => (
                 <tr key={v.id}>
@@ -55,7 +55,7 @@ export default function Prices() {
                   <td className="p-3">{v.label}</td>
                   <td className="p-3">{rupees(v.price)}</td>
                   <td className="p-3">
-                    <input inputMode="decimal" className="w-24 rounded-lg border border-gray-300 px-2 py-1.5"
+                    <input inputMode="decimal" className="w-24 rounded-lg border border-line px-2 py-1.5"
                       placeholder={String(v.price)} value={edits[v.id] ?? ""} onChange={(e) => setEdits({ ...edits, [v.id]: e.target.value })} />
                   </td>
                 </tr>
@@ -64,7 +64,7 @@ export default function Prices() {
           </tbody>
         </table>
       </div>
-      <div className="fixed inset-x-0 bottom-0 border-t border-gray-200 bg-white p-3">
+      <div className="fixed inset-x-0 bottom-0 border-t border-line bg-white p-3">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <div className="text-sm">{saved || <ErrorText>{error}</ErrorText> || `${changed.length} change(s)`}</div>
           <Button loading={busy} disabled={changed.length === 0} onClick={saveAll}>Save {changed.length || ""} price{changed.length === 1 ? "" : "s"}</Button>

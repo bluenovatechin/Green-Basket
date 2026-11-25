@@ -56,14 +56,14 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
 };
 
 export const STATUS_COLOR: Record<OrderStatus, string> = {
-  pending_payment: "bg-amber-100 text-amber-800",
-  placed: "bg-sky-100 text-sky-800",
-  confirmed: "bg-indigo-100 text-indigo-800",
-  packed: "bg-violet-100 text-violet-800",
-  out_for_delivery: "bg-orange-100 text-orange-800",
-  delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-gray-200 text-gray-700",
-  payment_failed: "bg-red-100 text-red-700",
+  pending_payment: "bg-amber-50 text-amber-700",
+  placed: "bg-sky-50 text-sky-700",
+  confirmed: "bg-indigo-50 text-indigo-700",
+  packed: "bg-violet-50 text-violet-700",
+  out_for_delivery: "bg-orange-50 text-orange-700",
+  delivered: "bg-brand-light text-brand",
+  cancelled: "bg-stone-100 text-stone-600",
+  payment_failed: "bg-red-50 text-red-700",
 };
 
 export function newKey(): string {

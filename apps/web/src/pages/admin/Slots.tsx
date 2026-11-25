@@ -50,7 +50,7 @@ export default function Slots() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Delivery slots</h1>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-ink-soft">
         Weekly templates create the actual slots every night for the next 7 days. Change capacity or close a single day's slot below.
       </p>
       <ErrorText>{error}</ErrorText>
@@ -60,8 +60,8 @@ export default function Slots() {
         <h2 className="font-semibold">Weekly templates</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-left text-gray-500"><tr><th className="py-1">Day</th><th>Time</th><th>Capacity</th><th>Order by</th><th /></tr></thead>
-            <tbody className="divide-y divide-gray-100">
+            <thead className="text-left text-ink-muted"><tr><th className="py-1">Day</th><th>Time</th><th>Capacity</th><th>Order by</th><th /></tr></thead>
+            <tbody className="divide-y divide-line">
               {templates.data!.map((t) => (
                 <tr key={t.id} className={t.is_active ? "" : "opacity-50"}>
                   <td className="py-2">{DAYS[t.weekday]}</td>
@@ -78,12 +78,12 @@ export default function Slots() {
           </table>
         </div>
 
-        <div className="space-y-2 rounded-xl bg-gray-50 p-3">
+        <div className="space-y-2 rounded-xl bg-surface p-3">
           <div className="text-sm font-medium">Add template</div>
           <div className="flex flex-wrap gap-1">
             {DAYS.map((d, i) => (
               <button key={d} onClick={() => setNt({ ...nt, weekdays: nt.weekdays.includes(i) ? nt.weekdays.filter((x) => x !== i) : [...nt.weekdays, i] })}
-                className={`rounded-lg border px-2 py-1 text-xs ${nt.weekdays.includes(i) ? "border-brand bg-brand-light text-brand" : "border-gray-300"}`}>{d}</button>
+                className={`rounded-lg border px-2 py-1 text-xs ${nt.weekdays.includes(i) ? "border-brand bg-brand-light text-brand" : "border-line"}`}>{d}</button>
             ))}
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -105,15 +105,15 @@ export default function Slots() {
         <h2 className="mb-2 font-semibold">Upcoming slots</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-left text-gray-500"><tr><th className="py-1">Date</th><th>Time</th><th>Booked</th><th>Capacity</th><th>Ordering closes</th><th /></tr></thead>
-            <tbody className="divide-y divide-gray-100">
+            <thead className="text-left text-ink-muted"><tr><th className="py-1">Date</th><th>Time</th><th>Booked</th><th>Capacity</th><th>Ordering closes</th><th /></tr></thead>
+            <tbody className="divide-y divide-line">
               {upcoming.data!.map((s) => (
                 <tr key={s.id} className={s.is_active ? "" : "opacity-50"}>
                   <td className="py-2">{dayLabel(s.slot_date)}</td>
                   <td>{time12(s.start_time)}–{time12(s.end_time)}</td>
                   <td>{s.booked}</td>
                   <td>
-                    <input className="w-16 rounded border border-gray-300 px-1 py-0.5" defaultValue={s.capacity} inputMode="numeric"
+                    <input className="w-16 rounded border border-line px-1 py-0.5" defaultValue={s.capacity} inputMode="numeric"
                       onBlur={(e) => Number(e.target.value) !== s.capacity && act(() => supabase.from("delivery_slots").update({ capacity: Number(e.target.value) }).eq("id", s.id), "Capacity updated.")} />
                   </td>
                   <td>{dateTime(s.cutoff_at)}</td>

@@ -24,23 +24,23 @@ export default function Procurement() {
           <Button variant="secondary" onClick={() => window.print()}>Print</Button>
         </div>
       </div>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-ink-soft">
         Total of all placed, confirmed and packed orders for <b>{dayLabel(date)}</b> ({date}). "Still available to sell" is the stock not yet ordered.
       </p>
 
       {report.isLoading ? <FullPageSpinner /> : !report.data?.length ? <Empty title="No orders for this date yet" /> : (
         <div className="print-area overflow-x-auto rounded-2xl bg-white">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 text-gray-600">
+            <thead className="bg-surface text-ink-soft">
               <tr><th className="p-3">Product</th><th className="p-3 text-right">Needed</th><th className="p-3 text-right">Orders</th><th className="p-3 text-right">Still available to sell</th></tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-line">
               {report.data.map((l) => (
                 <tr key={l.product_id}>
-                  <td className="p-3 font-medium">{l.product_name}{l.name_local && <span className="ml-2 text-gray-500">{l.name_local}</span>}</td>
+                  <td className="p-3 font-medium">{l.product_name}{l.name_local && <span className="ml-2 text-ink-muted">{l.name_local}</span>}</td>
                   <td className="p-3 text-right text-base font-bold">{qty(l.unit, l.total_qty)}</td>
                   <td className="p-3 text-right">{l.order_count}</td>
-                  <td className="p-3 text-right text-gray-600">{qty(l.unit, l.stock_left)}</td>
+                  <td className="p-3 text-right text-ink-soft">{qty(l.unit, l.stock_left)}</td>
                 </tr>
               ))}
             </tbody>

@@ -8,6 +8,7 @@ import { friendlyError } from "../../lib/errors";
 import type { OrderStatus } from "../../lib/types";
 import { Button, Card, Empty, ErrorText, FullPageSpinner } from "../../components/ui";
 import OrderTracker from "../../components/OrderTracker";
+import Icon from "../../components/Icon";
 import { Row } from "./Cart";
 
 export default function OrderDetail() {
@@ -87,7 +88,7 @@ export default function OrderDetail() {
 
   return (
     <div className="mx-auto max-w-xl space-y-4 pb-6">
-      <Link to="/orders" className="inline-flex items-center gap-1 text-sm font-medium text-gray-600">← My orders</Link>
+      <Link to="/orders" className="inline-flex items-center gap-1 text-sm font-medium text-ink-soft">← My orders</Link>
 
       {justPlaced && o.status !== "pending_payment" && (
         <div className="rounded-2xl bg-gradient-to-br from-brand to-brand-dark p-5 text-center text-white">
@@ -101,7 +102,7 @@ export default function OrderDetail() {
       {!justPlaced && (
         <div className="flex items-baseline justify-between">
           <h1 className="text-xl font-bold">Order {o.order_number}</h1>
-          <span className="text-sm text-gray-500">{dateTime(o.created_at)}</span>
+          <span className="text-sm text-ink-muted">{dateTime(o.created_at)}</span>
         </div>
       )}
 
@@ -112,7 +113,7 @@ export default function OrderDetail() {
           ) : (
             <>
               <p className="font-semibold">Complete your payment</p>
-              <p className="text-sm text-gray-700">Your items are held for {minutesLeft} more minute{minutesLeft === 1 ? "" : "s"}.</p>
+              <p className="text-sm text-ink-soft">Your items are held for {minutesLeft} more minute{minutesLeft === 1 ? "" : "s"}.</p>
               <Button className="mt-3 w-full" loading={busy} onClick={pay} disabled={minutesLeft === 0}>Pay {rupees(o.total)} now</Button>
             </>
           )}
@@ -123,17 +124,17 @@ export default function OrderDetail() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Card className="text-sm">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Delivery</div>
+          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">Delivery</div>
           <div className="font-semibold">{slotLabel(o.delivery_slots)}</div>
-          <div className="mt-1 text-gray-600">
+          <div className="mt-1 text-ink-soft">
             {o.address.full_name} · {o.address.phone}<br />
             {o.address.line1}{o.address.line2 ? `, ${o.address.line2}` : ""}, {o.address.city} {o.address.pincode}
           </div>
         </Card>
         <Card className="text-sm">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Payment</div>
+          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">Payment</div>
           <div className="font-semibold">{o.payment_method === "cod" ? "Cash / UPI on delivery" : "Paid online (PhonePe)"}</div>
-          <div className="mt-1 text-gray-600">
+          <div className="mt-1 text-ink-soft">
             {o.payment_status === "paid" ? "✓ Paid" : o.payment_method === "cod" ? `Pay ${rupees(o.total)} to the rider` : o.payment_status === "failed" ? "Not paid" : "Pending"}
           </div>
         </Card>
@@ -146,18 +147,18 @@ export default function OrderDetail() {
         </button>
         {showItems && (
           <div className="mt-3">
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-line">
               {items.map((i) => (
                 <li key={i.id} className="flex justify-between gap-3 py-2">
-                  <span className={i.is_unavailable ? "text-gray-400 line-through" : ""}>
+                  <span className={i.is_unavailable ? "text-ink-muted line-through" : ""}>
                     {i.product_name} · {i.variant_label} × {i.quantity}
-                    <span className="block text-xs text-gray-500">{qty(i.unit, i.pack_qty * i.quantity)}</span>
+                    <span className="block text-xs text-ink-muted">{qty(i.unit, i.pack_qty * i.quantity)}</span>
                   </span>
-                  <span className={i.is_unavailable ? "text-gray-400" : ""}>{i.is_unavailable ? "Unavailable" : rupees(i.line_total)}</span>
+                  <span className={i.is_unavailable ? "text-ink-muted" : ""}>{i.is_unavailable ? "Unavailable" : rupees(i.line_total)}</span>
                 </li>
               ))}
             </ul>
-            <div className="mt-2 space-y-1 border-t border-gray-100 pt-2">
+            <div className="mt-2 space-y-1 border-t border-line pt-2">
               <Row label="Items" value={rupees(o.subtotal)} />
               <Row label="Delivery fee" value={Number(o.delivery_fee) === 0 ? "FREE" : rupees(o.delivery_fee)} />
               <Row label="Total" value={rupees(o.total)} bold />
@@ -172,13 +173,13 @@ export default function OrderDetail() {
       </Card>
 
       {!!o.order_events?.length && (
-        <details className="rounded-2xl border border-gray-200 bg-white p-4 text-sm">
+        <details className="rounded-2xl bg-white ring-1 ring-line/60 shadow-soft p-4 text-sm">
           <summary className="cursor-pointer font-semibold">Order history</summary>
           <ul className="mt-2 space-y-1.5">
             {o.order_events.map((e) => (
               <li key={e.id} className="flex justify-between gap-2">
                 <span>{STATUS_LABEL[e.to_status]}{e.note ? ` – ${e.note}` : ""}</span>
-                <span className="whitespace-nowrap text-gray-500">{dateTime(e.created_at)}</span>
+                <span className="whitespace-nowrap text-ink-muted">{dateTime(e.created_at)}</span>
               </li>
             ))}
           </ul>
@@ -190,9 +191,9 @@ export default function OrderDetail() {
       <div className="grid gap-2 sm:grid-cols-2">
         <Button onClick={() => navigate("/")}>Continue shopping</Button>
         {support ? (
-          <a href={`tel:${support}`} className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-gray-300 bg-white font-semibold">📞 Call support</a>
+          <a href={`tel:${support}`} className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-white ring-1 ring-inset ring-line font-semibold"><Icon name="phone" size={18} className="mr-2" />Call support</a>
         ) : (
-          <a href={`mailto:${settings.data?.support_email ?? ""}`} className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-gray-300 bg-white font-semibold">Need help?</a>
+          <a href={`mailto:${settings.data?.support_email ?? ""}`} className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-white ring-1 ring-inset ring-line font-semibold">Need help?</a>
         )}
       </div>
       {canCancel && (

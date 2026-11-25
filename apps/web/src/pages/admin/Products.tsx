@@ -44,10 +44,10 @@ export default function Products() {
 
       <div className="overflow-x-auto rounded-2xl bg-white">
         <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50 text-gray-600">
+          <thead className="bg-surface text-ink-soft">
             <tr><th className="p-3">Product</th><th className="p-3">Pack sizes & prices</th><th className="p-3 text-right">Available to sell</th><th className="p-3" /></tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-line">
             {list.map((p) => {
               const low = Number(p.stock_qty) <= Number(p.low_stock_threshold);
               return (
@@ -58,7 +58,7 @@ export default function Products() {
                       <div>
                         {isAdmin ? <Link to={`/admin/products/${p.id}`} className="font-semibold text-brand">{p.name}</Link> : <span className="font-semibold">{p.name}</span>}
                         {!p.is_active && <span className="ml-1 text-xs">(hidden)</span>}
-                        <div className="text-xs text-gray-500">{p.name_local}</div>
+                        <div className="text-xs text-ink-muted">{p.name_local}</div>
                       </div>
                     </div>
                   </td>
@@ -116,7 +116,7 @@ function StockDialog({ product, onClose }: { product: Product; onClose: () => vo
         <p className="text-sm">Available to sell now: <b>{qty(product.unit, product.stock_qty)}</b></p>
         <div className="grid grid-cols-3 gap-1 text-sm">
           {(["restock", "wastage", "adjustment"] as const).map((r) => (
-            <button key={r} onClick={() => setReason(r)} className={`rounded-lg border px-2 py-2 ${reason === r ? "border-brand bg-brand-light font-semibold text-brand" : "border-gray-300"}`}>
+            <button key={r} onClick={() => setReason(r)} className={`rounded-lg border px-2 py-2 ${reason === r ? "border-brand bg-brand-light font-semibold text-brand" : "border-line"}`}>
               {r === "restock" ? "Add stock" : r === "wastage" ? "Wastage" : "Correction"}
             </button>
           ))}

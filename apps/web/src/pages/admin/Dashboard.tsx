@@ -7,6 +7,7 @@ import { dayLabel, qty, rupees, todayIST } from "../../lib/format";
 import type { OrderStatus, Product } from "../../lib/types";
 import { Card, FullPageSpinner } from "../../components/ui";
 import { useAuth } from "../../auth/AuthProvider";
+import Icon, { type IconName } from "../../components/Icon";
 
 interface Summary {
   by_status: Partial<Record<OrderStatus, number>>;
@@ -63,12 +64,12 @@ export default function Dashboard() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">{greet}{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""} 👋</h1>
-          <p className="text-sm text-gray-600">Here's how deliveries for <b>{dayLabel(date)}</b> are going.</p>
+          <h1 className="text-2xl font-bold">{greet}{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}</h1>
+          <p className="text-sm text-ink-soft">Here's how deliveries for <b>{dayLabel(date)}</b> are going.</p>
         </div>
-        <div className="flex overflow-hidden rounded-xl border border-gray-300 bg-white text-sm">
+        <div className="flex overflow-hidden rounded-full bg-white ring-1 ring-inset ring-line text-sm">
           {[["Today", todayIST()], ["Tomorrow", todayIST(1)]].map(([l, d]) => (
-            <button key={d} onClick={() => setDate(d)} className={`px-3 py-2 font-medium ${date === d ? "bg-brand text-white" : "text-gray-700"}`}>{l}</button>
+            <button key={d} onClick={() => setDate(d)} className={`px-3 py-2 font-medium ${date === d ? "bg-brand text-white" : "text-ink-soft"}`}>{l}</button>
           ))}
         </div>
       </div>
@@ -98,25 +99,25 @@ export default function Dashboard() {
             </ul>
           )}
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Quick to="/admin/procurement" icon="🛒" label="Buying list" />
-            <Quick to="/admin/prices" icon="🏷️" label="Update prices" />
-            <Quick to="/admin/products" icon="📥" label="Add stock" />
-            <Quick to="/admin/slots" icon="🕒" label="Slots" />
+            <Quick to="/admin/procurement" icon="cart" label="Buying list" />
+            <Quick to="/admin/prices" icon="tag" label="Update prices" />
+            <Quick to="/admin/products" icon="upload" label="Add stock" />
+            <Quick to="/admin/slots" icon="clock" label="Slots" />
           </div>
         </Card>
 
         <Card>
           <h2 className="mb-1 font-semibold">Money</h2>
           <div className="text-3xl font-bold">{rupees(s?.delivered_revenue)}</div>
-          <p className="mb-3 text-xs text-gray-500">from delivered orders</p>
-          <h3 className="mb-1 text-sm font-semibold text-gray-700">Collected by riders</h3>
+          <p className="mb-3 text-xs text-ink-muted">from delivered orders</p>
+          <h3 className="mb-1 text-sm font-semibold text-ink-soft">Collected by riders</h3>
           {s?.cod_collected.length ? (
             <ul className="space-y-1 text-sm">
               {s.cod_collected.map((c, i) => (
                 <li key={i} className="flex justify-between"><span>{c.rider ?? "Unassigned"} · {c.via === "upi_qr" ? "UPI" : "Cash"}</span><b>{rupees(c.amount)}</b></li>
               ))}
             </ul>
-          ) : <p className="text-sm text-gray-500">Nothing collected yet.</p>}
+          ) : <p className="text-sm text-ink-muted">Nothing collected yet.</p>}
         </Card>
       </div>
 
@@ -140,16 +141,16 @@ export default function Dashboard() {
 function Stat({ label, value, to, accent }: { label: string; value: number; to: string; accent?: boolean }) {
   return (
     <Link to={to} className={`rounded-2xl p-4 transition hover:shadow-md ${accent ? "bg-brand text-white" : "bg-white"}`}>
-      <div className={`text-sm ${accent ? "text-white/80" : "text-gray-500"}`}>{label}</div>
+      <div className={`text-sm ${accent ? "text-white/80" : "text-ink-muted"}`}>{label}</div>
       <div className="text-3xl font-bold">{value}</div>
     </Link>
   );
 }
 
-function Quick({ to, icon, label }: { to: string; icon: string; label: string }) {
+function Quick({ to, icon, label }: { to: string; icon: IconName; label: string }) {
   return (
-    <Link to={to} className="flex flex-col items-center gap-1 rounded-xl border border-gray-200 p-3 text-center text-xs font-semibold text-gray-700 hover:border-brand hover:text-brand">
-      <span className="text-xl" aria-hidden>{icon}</span>{label}
+    <Link to={to} className="flex flex-col items-center gap-1 rounded-xl border border-line p-3 text-center text-xs font-semibold text-ink-soft hover:border-brand hover:text-brand">
+      <Icon name={icon} size={22} />{label}
     </Link>
   );
 }

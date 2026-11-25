@@ -28,84 +28,84 @@ interface CartState {
 const LEGACY_KEY = "gb_cart_v1";
 const getStorageKey = (userId?: string | null) => (userId ? `gb_cart_u_${userId}` : "gb_cart_guest");
 
-function readLines(key: string): CartLine[] {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as CartLine[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeLines(key: string, lines: CartLine[]) {
-  try {
-    localStorage.setItem(key, JSON.stringify(lines));
-  } catch {
-    /* private mode / quota exceeded */
-  }
-}
-
-const CartContext = createContext<CartState | null>(null);
-
-export function CartProvider({ children }: { children: ReactNode }) {
-  const { session } = useAuth();
-  const userId = session?.user?.id ?? null;
-  const currentKey = getStorageKey(userId);
-  const prevUserIdRef = useRef<string | null>(userId);
-
-  // Initial load with legacy migration
-  const [lines, setLines] = useState<CartLine[]>(() => {
-    let initial = readLines(currentKey);
-    if (!initial.length) {
-      const legacy = readLines(LEGACY_KEY);
-      if (legacy.length) {
-        initial = legacy;
-        writeLines(currentKey, legacy);
-        try {
-          localStorage.removeItem(LEGACY_KEY);
-        } catch {
-          /* ignore */
-        }
-      }
+  function readLines(key: string): CartLine[] {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? (JSON.parse(raw) as CartLine[]) : [];
+    } catch {
+      return [];
     }
-    return initial;
-  });
+  }
 
-  // Handle switching users (e.g. guest signs in or logs out)
-  useEffect(() => {
-    const prevUserId = prevUserIdRef.current;
-    prevUserIdRef.current = userId;
+  function writeLines(key: string, lines: CartLine[]) {
+    try {
+      localStorage.setItem(key, JSON.stringify(lines));
+    } catch {
+      /* private mode / quota exceeded */
+    }
+  }
 
-    if (prevUserId !== userId) {
-      const targetKey = getStorageKey(userId);
-      const userLines = readLines(targetKey);
+  const CartContext = createContext<CartState | null>(null);
 
-      // If guest just signed in, merge guest items into the user's cart
-      if (!prevUserId && userId) {
-        const guestLines = readLines("gb_cart_guest");
-        if (guestLines.length > 0) {
-          const merged = [...userLines];
-          for (const item of guestLines) {
-            const idx = merged.findIndex((m) => m.variant_id === item.variant_id);
-            if (idx >= 0) {
-              merged[idx] = { ...merged[idx], quantity: merged[idx].quantity + item.quantity };
-            } else {
-              merged.push(item);
-            }
-          }
-          writeLines(targetKey, merged);
+  export function CartProvider({ children }: { children: ReactNode }) {
+    const { session } = useAuth();
+    const userId = session?.user?.id ?? null;
+    const currentKey = getStorageKey(userId);
+    const prevUserIdRef = useRef<string | null>(userId);
+
+    // Initial load with legacy migration
+    const [lines, setLines] = useState<CartLine[]>(() => {
+      let initial = readLines(currentKey);
+      if (!initial.length) {
+        const legacy = readLines(LEGACY_KEY);
+        if (legacy.length) {
+          initial = legacy;
+          writeLines(currentKey, legacy);
           try {
-            localStorage.removeItem("gb_cart_guest");
+            localStorage.removeItem(LEGACY_KEY);
           } catch {
             /* ignore */
           }
-          setLines(merged);
-          return;
         }
       }
+      return initial;
+    });
 
-      setLines(userLines);
-    }
+    // Handle switching users (e.g. guest signs in or logs out)
+    useEffect(() => {
+        const prevUserId = prevUserIdRef.current;
+        prevUserIdRef.current = userId;
+
+        if (prevUserId !== userId) {
+          const targetKey = getStorageKey(userId);
+          const userLines = readLines(targetKey);
+
+          // If guest just signed in, merge guest items into the user's cart
+          if (!prevUserId && userId) {
+            const guestLines = readLines("gb_cart_guest");
+            if (guestLines.length > 0) {
+              const merged = [...userLines];
+              for (const item of guestLines) {
+                const idx = merged.findIndex((m) => m.variant_id === item.variant_id);
+                if (idx >= 0) {
+                  merged[idx] = { ...merged[idx], quantity: merged[idx].quantity + item.quantity };
+                } else {
+                  merged.push(item);
+                }
+              }
+              writeLines(targetKey, merged);
+              try {
+                localStorage.removeItem("gb_cart_guest");
+              } catch {
+                /* ignore */
+              }
+              setLines(merged);
+              return;
+            }
+          }
+
+          setLines(userLines);
+        }
   }, [userId]);
 
   // Persist current lines
@@ -152,20 +152,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ];
       }),
     setQuantity: (id, q) =>
-      setLines((ls) =>
-        q <= 0 ? ls.filter((l) => l.variant_id !== id) : ls.map((l) => (l.variant_id === id ? { ...l, quantity: q } : l)),
+    setLines((ls) =>
+  q <= 0 ? ls.filter((l) => l.variant_id !== id) : ls.map((l) => (l.variant_id === id ? { ...l, quantity: q } : l)),
       ),
-    updatePrices: (vs) =>
-      setLines((ls) =>
-        ls.map((l) => {
-          const v = vs.find((x) => x.id === l.variant_id);
-          return v && Number(v.price) !== l.price ? { ...l, price: Number(v.price) } : l;
-        }),
-      ),
+  updatePrices: (vs) =>
+    setLines((ls) =>
+      ls.map((l) => {
+        const v = vs.find((x) => x.id === l.variant_id);
+        return v && Number(v.price) !== l.price ? { ...l, price: Number(v.price) } : l;
+      }),
+    ),
     clear: () => setLines([]),
   }), [lines]);
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
 export function useCart(): CartState {

@@ -40,7 +40,7 @@ export default function Staff() {
       <h1 className="text-xl font-bold">Staff</h1>
       <Card className="space-y-3">
         <h2 className="font-semibold">Give someone access</h2>
-        <p className="text-sm text-gray-600">They must log in to the app once with their email first.</p>
+        <p className="text-sm text-ink-soft">They must log in to the app once with their email first.</p>
         <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
           <Field label="Email"><input className={inputClass} type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
           <Field label="Role">
@@ -56,10 +56,10 @@ export default function Staff() {
 
       <Card>
         <h2 className="mb-2 font-semibold">Current staff</h2>
-        <ul className="divide-y divide-gray-100 text-sm">
+        <ul className="divide-y divide-line text-sm">
           {staff.data?.map((p) => (
             <li key={p.id} className="flex items-center justify-between py-2">
-              <span>{p.full_name || p.email}<span className="block text-xs text-gray-500">{p.email}</span></span>
+              <span>{p.full_name || p.email}<span className="block text-xs text-ink-muted">{p.email}</span></span>
               <span className="flex items-center gap-3">
                 <b className="capitalize">{p.role}</b>
                 <button className="text-red-600" onClick={() => confirm(`Remove staff access for ${p.email}?`) && setUserRole(p.email, "customer")}>Remove</button>

@@ -2,7 +2,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../state/cart";
 import { useSettings } from "../../lib/api";
 import { rupees } from "../../lib/format";
-import { QtyStepper } from "../../components/ProductCard";
+import { ProductImage, QtyStepper } from "../../components/ProductCard";
+import Icon from "../../components/Icon";
 import { Button, Card, Empty } from "../../components/ui";
 
 export function useBill(subtotal: number) {
@@ -24,52 +25,86 @@ export default function Cart() {
 
   if (cart.lines.length === 0) {
     return (
-      <Empty title="Your basket is empty">
-        <Link to="/" className="font-semibold text-brand">Start shopping</Link>
+      <Empty title="Your basket is empty" icon="bag">
+        <p className="mb-5">Fresh vegetables and fruits are waiting for you.</p>
+        <Link to="/"><Button>Start shopping</Button></Link>
       </Empty>
     );
   }
 
+  const freePct = bill.settings ? Math.min(100, (cart.subtotal / bill.settings.free_delivery_above) * 100) : 0;
+
   return (
-    <div className="mx-auto max-w-xl space-y-4">
-      <h1 className="text-xl font-bold">Your basket</h1>
-      <Card className="divide-y divide-gray-100 p-0">
-        {cart.lines.map((l) => (
-          <div key={l.variant_id} className="flex items-center gap-3 p-3">
-            <div className="h-14 w-14 flex-none overflow-hidden rounded-lg bg-brand-light">
-              {l.image_url ? <img src={l.image_url} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-2xl">🥕</div>}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate font-medium">{l.name}</div>
-              <div className="text-sm text-gray-500">{l.label} · {rupees(l.price)}</div>
-            </div>
-            <QtyStepper value={l.quantity} onChange={(n) => cart.setQuantity(l.variant_id, n)} max={bill.settings?.max_qty_per_item} />
+    <div className="mx-auto grid max-w-5xl gap-6 pb-24 lg:grid-cols-[1fr_360px]">
+      <div className="space-y-4">
+        <div className="flex items-end justify-between">
+          <div>
+            <h1 className="text-2xl font-extrabold">Your basket</h1>
+            <p className="text-sm text-ink-muted">{cart.count} item{cart.count === 1 ? "" : "s"}</p>
           </div>
-        ))}
-      </Card>
+          <Link to="/" className="text-sm font-semibold text-brand">+ Add more</Link>
+        </div>
 
-      <Card className="space-y-1.5 text-sm">
-        <Row label="Items" value={rupees(cart.subtotal)} />
-        <Row label="Delivery fee" value={bill.fee === 0 ? "FREE" : rupees(bill.fee)} />
-        <Row label="Total" value={rupees(bill.total)} bold />
-        {bill.toFree > 0 && <p className="pt-1 text-brand">Add {rupees(bill.toFree)} more for free delivery.</p>}
-      </Card>
+        {bill.settings && (
+          <div className="rounded-3xl bg-white p-4 ring-1 ring-line/60">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Icon name="truck" size={18} className="text-brand" />
+              {bill.toFree > 0 ? <>Add <b className="tabular">{rupees(bill.toFree)}</b> more for free delivery</> : <b className="text-brand">You get free delivery</b>}
+            </div>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface">
+              <div className="h-full rounded-full bg-brand transition-all duration-500" style={{ width: `${freePct}%` }} />
+            </div>
+          </div>
+        )}
 
-      {bill.belowMin && bill.settings && (
-        <p className="text-sm text-amber-700">Minimum order is {rupees(bill.settings.min_order_value)}.</p>
-      )}
-      <Button className="w-full" disabled={bill.belowMin} onClick={() => navigate("/checkout")}>
-        Choose delivery time
-      </Button>
+        <ul className="divide-y divide-line overflow-hidden rounded-3xl bg-white shadow-soft ring-1 ring-line/60">
+          {cart.lines.map((l) => (
+            <li key={l.variant_id} className="flex items-center gap-4 p-4">
+              <div className="h-16 w-16 flex-none overflow-hidden rounded-2xl bg-surface">
+                <ProductImage name={l.name} image_url={l.image_url} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-semibold">{l.name}</div>
+                <div className="text-sm text-ink-muted">{l.label}</div>
+                <div className="tabular mt-0.5 text-sm font-bold">{rupees(l.price * l.quantity)}</div>
+              </div>
+              <QtyStepper size="sm" value={l.quantity} onChange={(n) => cart.setQuantity(l.variant_id, n)} max={bill.settings?.max_qty_per_item} />
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="lg:pt-14">
+        <Card className="space-y-2.5 lg:sticky lg:top-24">
+          <h2 className="font-bold">Bill details</h2>
+          <Row label="Item total" value={rupees(cart.subtotal)} />
+          <Row label="Delivery fee" value={bill.fee === 0 ? "Free" : rupees(bill.fee)} />
+          <Row label="To pay" value={rupees(bill.total)} bold />
+          {bill.belowMin && bill.settings && (
+            <p className="rounded-2xl bg-amber-50 px-3 py-2 text-sm text-amber-800">Minimum order is {rupees(bill.settings.min_order_value)}.</p>
+          )}
+          <Button size="lg" className="mt-2 hidden w-full lg:flex" disabled={bill.belowMin} onClick={() => navigate("/checkout")}>
+            Continue to checkout <Icon name="arrowRight" size={18} />
+          </Button>
+        </Card>
+      </div>
+
+      {/* mobile sticky CTA */}
+      <div className="fixed inset-x-0 bottom-[68px] z-30 bg-gradient-to-t from-surface via-surface to-transparent px-4 pb-3 pt-6 lg:hidden">
+        <Button size="lg" className="w-full justify-between pl-6 pr-5" disabled={bill.belowMin} onClick={() => navigate("/checkout")}>
+          <span className="tabular">{rupees(bill.total)}</span>
+          <span className="flex items-center gap-1">Checkout <Icon name="arrowRight" size={18} /></span>
+        </Button>
+      </div>
     </div>
   );
 }
 
 export function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <div className={`flex justify-between ${bold ? "border-t border-gray-100 pt-1.5 text-base font-bold" : ""}`}>
+    <div className={`flex justify-between text-sm ${bold ? "border-t border-dashed border-line pt-3 text-base font-extrabold" : "text-ink-soft"}`}>
       <span>{label}</span>
-      <span>{value}</span>
+      <span className="tabular">{value}</span>
     </div>
   );
 }

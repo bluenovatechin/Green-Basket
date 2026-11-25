@@ -1,15 +1,31 @@
 import { useState } from "react";
 import type { Product } from "../lib/types";
 import { rupees } from "../lib/format";
+import { productImage } from "../lib/images";
 import { useCart } from "../state/cart";
+import Icon from "./Icon";
 
-export function QtyStepper({ value, onChange, max }: { value: number; onChange: (n: number) => void; max?: number }) {
+export function QtyStepper({ value, onChange, max, size = "md" }: { value: number; onChange: (n: number) => void; max?: number; size?: "sm" | "md" }) {
+  const h = size === "sm" ? "h-9" : "h-10";
   return (
-    <div className="flex h-10 items-center overflow-hidden rounded-xl bg-brand text-white">
-      <button className="h-full w-10 text-xl font-bold" onClick={() => onChange(value - 1)} aria-label="Remove one">−</button>
-      <span className="w-8 text-center font-semibold" aria-live="polite">{value}</span>
-      <button className="h-full w-10 text-xl font-bold disabled:opacity-40" onClick={() => onChange(value + 1)} disabled={max !== undefined && value >= max} aria-label="Add one">+</button>
+    <div className={`flex ${h} items-center rounded-full bg-brand text-white shadow-sm`}>
+      <button className={`flex ${h} w-9 items-center justify-center rounded-full hover:bg-white/10`} onClick={() => onChange(value - 1)} aria-label="Remove one">
+        <Icon name="minus" size={16} strokeWidth={2.25} />
+      </button>
+      <span className="tabular w-6 text-center text-sm font-bold" aria-live="polite">{value}</span>
+      <button className={`flex ${h} w-9 items-center justify-center rounded-full hover:bg-white/10 disabled:opacity-40`} onClick={() => onChange(value + 1)} disabled={max !== undefined && value >= max} aria-label="Add one">
+        <Icon name="plus" size={16} strokeWidth={2.25} />
+      </button>
     </div>
+  );
+}
+
+export function ProductImage({ name, image_url, className = "" }: { name: string; image_url?: string | null; className?: string }) {
+  const src = productImage({ name, image_url });
+  return src ? (
+    <img src={src} alt={name} loading="lazy" className={`h-full w-full object-cover ${className}`} />
+  ) : (
+    <div className={`flex h-full w-full items-center justify-center text-brand/40 ${className}`}><Icon name="leaf" size={36} /></div>
   );
 }
 
@@ -24,59 +40,62 @@ export default function ProductCard({ product, maxQty }: { product: Product; max
   const outOfStock = packsAvailable <= 0;
   const lowStock = packsAvailable > 0 && packsAvailable <= 5;
   const discount = v.mrp && v.mrp > v.price ? Math.round(((v.mrp - v.price) / v.mrp) * 100) : 0;
+  const image = productImage(product);
 
   return (
-    <article className="flex flex-col rounded-2xl border border-gray-200 bg-white p-3">
-      <div className="relative mb-2 aspect-square overflow-hidden rounded-xl bg-brand-light">
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.name} loading="lazy" className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full items-center justify-center text-5xl" aria-hidden>🥕</div>
-        )}
+    <article className={`group flex flex-col rounded-3xl bg-white p-2.5 shadow-soft ring-1 ring-line/60 transition hover:shadow-lift ${outOfStock ? "opacity-70" : ""}`}>
+      <div className="relative aspect-square overflow-hidden rounded-2xl bg-surface">
+        <ProductImage name={product.name} image_url={product.image_url} className="transition duration-500 group-hover:scale-105" />
         {discount > 0 && (
-          <span className="absolute left-2 top-2 rounded-md bg-brand-accent px-1.5 py-0.5 text-xs font-bold text-gray-900">{discount}% off</span>
+          <span className="absolute left-2 top-2 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-bold text-brand shadow-sm">{discount}% off</span>
         )}
-        {lowStock && !outOfStock && (
-          <span className="absolute bottom-2 left-2 rounded-md bg-amber-500/90 px-1.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
-            Only {packsAvailable} left
-          </span>
+        {lowStock && (
+          <span className="absolute bottom-2 left-2 rounded-full bg-ink/80 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur">Only {packsAvailable} left</span>
+        )}
+        {outOfStock && (
+          <span className="absolute inset-x-2 bottom-2 rounded-full bg-white/95 py-1 text-center text-xs font-semibold text-ink-muted">Sold out</span>
         )}
       </div>
-      <h3 className="font-semibold leading-tight">{product.name}</h3>
-      {product.name_local && <p className="text-sm text-gray-500">{product.name_local}</p>}
 
-      {product.product_variants.length > 1 ? (
-        <div className="mt-2 flex flex-wrap gap-1.5" role="radiogroup" aria-label={`${product.name} pack size`}>
-          {product.product_variants.map((x) => (
-            <button
-              key={x.id}
-              role="radio"
-              aria-checked={x.id === v.id}
-              onClick={() => setVariantId(x.id)}
-              className={`rounded-lg border px-2 py-1 text-xs font-medium ${x.id === v.id ? "border-brand bg-brand-light text-brand" : "border-gray-300 text-gray-600"}`}
-            >
-              {x.label}
-            </button>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-2 text-xs text-gray-500">{v.label}</p>
-      )}
+      <div className="flex flex-1 flex-col px-1.5 pb-1 pt-3">
+        <h3 className="text-[15px] font-semibold leading-snug">{product.name}</h3>
+        {product.name_local && <p className="text-xs text-ink-muted">{product.name_local}</p>}
 
-      <div className="mt-auto flex items-end justify-between pt-3">
-        <div>
-          <div className="font-bold">{rupees(v.price)}</div>
-          {discount > 0 && <div className="text-xs text-gray-400 line-through">{rupees(v.mrp)}</div>}
-        </div>
-        {outOfStock ? (
-          <span className="text-sm font-medium text-gray-400">Sold out</span>
-        ) : inCart > 0 ? (
-          <QtyStepper value={inCart} onChange={(n) => cart.setQuantity(v.id, n)} max={Math.min(maxQty, packsAvailable)} />
+        {product.product_variants.length > 1 ? (
+          <div className="mt-2 flex flex-wrap gap-1" role="radiogroup" aria-label={`${product.name} pack size`}>
+            {product.product_variants.map((x) => (
+              <button
+                key={x.id}
+                role="radio"
+                aria-checked={x.id === v.id}
+                onClick={() => setVariantId(x.id)}
+                className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${x.id === v.id ? "bg-ink text-white" : "bg-surface text-ink-soft hover:bg-line"}`}
+              >
+                {x.label}
+              </button>
+            ))}
+          </div>
         ) : (
-          <button onClick={() => cart.add(product, v)} className="h-10 rounded-xl border-2 border-brand px-4 font-bold text-brand hover:bg-brand-light">
-            ADD
-          </button>
+          <p className="mt-2 text-xs font-medium text-ink-muted">{v.label}</p>
         )}
+
+        <div className="mt-auto flex items-center justify-between pt-3">
+          <div className="leading-tight">
+            <div className="tabular text-base font-bold">{rupees(v.price)}</div>
+            {discount > 0 && <div className="tabular text-[11px] text-ink-muted line-through">{rupees(v.mrp)}</div>}
+          </div>
+          {outOfStock ? null : inCart > 0 ? (
+            <QtyStepper size="sm" value={inCart} onChange={(n) => cart.setQuantity(v.id, n)} max={Math.min(maxQty, packsAvailable)} />
+          ) : (
+            <button
+              onClick={() => cart.add({ ...product, image_url: image }, v)}
+              className="flex h-9 items-center gap-1 rounded-full bg-brand-light px-3.5 text-sm font-bold text-brand transition hover:bg-brand hover:text-white"
+              aria-label={`Add ${product.name} ${v.label}`}
+            >
+              <Icon name="plus" size={16} strokeWidth={2.25} /> Add
+            </button>
+          )}
+        </div>
       </div>
     </article>
   );

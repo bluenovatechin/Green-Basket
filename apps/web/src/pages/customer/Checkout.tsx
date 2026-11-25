@@ -112,7 +112,7 @@ export default function Checkout() {
     <div className="mx-auto max-w-xl space-y-4 pb-24">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Checkout</h1>
-        <Link to="/cart" className="text-sm font-medium text-gray-600">← Basket</Link>
+        <Link to="/cart" className="text-sm font-medium text-ink-soft">← Basket</Link>
       </div>
 
       <Card>
@@ -125,7 +125,7 @@ export default function Checkout() {
         ) : (
           <div className="space-y-2">
             {addresses.data.map((a) => (
-              <label key={a.id} className={`flex cursor-pointer gap-3 rounded-xl border p-3 ${addressId === a.id ? "border-brand bg-brand-light" : "border-gray-200"}`}>
+              <label key={a.id} className={`flex cursor-pointer gap-3 rounded-xl border p-3 ${addressId === a.id ? "border-brand bg-brand-light" : "border-line"}`}>
                 <input type="radio" name="address" checked={addressId === a.id} onChange={() => setAddressId(a.id)} className="mt-1 accent-brand" />
                 <span className="text-sm">
                   <b>{a.label}</b> · {a.full_name}, {a.phone}<br />
@@ -140,20 +140,20 @@ export default function Checkout() {
 
       <Card>
         <StepHeader n={2} title="Delivery time" done={Boolean(slotId)} />
-        {slotsByDay.length === 0 && <p className="text-sm text-gray-600">No delivery slots open right now. Please check back soon.</p>}
+        {slotsByDay.length === 0 && <p className="text-sm text-ink-soft">No delivery slots open right now. Please check back soon.</p>}
         <div className="space-y-3">
           {slotsByDay.map(([day, list]) => (
             <div key={day}>
-              <div className="mb-1.5 text-sm font-medium text-gray-600">{dayLabel(day)}</div>
+              <div className="mb-1.5 text-sm font-medium text-ink-soft">{dayLabel(day)}</div>
               <div className="grid grid-cols-2 gap-2">
                 {list.map((sl) => {
                   const left = sl.capacity - sl.booked;
                   const full = left <= 0;
                   return (
                     <button key={sl.id} disabled={full} onClick={() => setSlotId(sl.id)}
-                      className={`rounded-xl border p-3 text-left text-sm disabled:opacity-40 ${slotId === sl.id ? "border-brand bg-brand-light" : "border-gray-200 bg-white"}`}>
+                      className={`rounded-xl border p-3 text-left text-sm disabled:opacity-40 ${slotId === sl.id ? "border-brand bg-brand-light" : "border-line bg-white"}`}>
                       <div className="font-semibold">{time12(sl.start_time)} – {time12(sl.end_time)}</div>
-                      <div className="text-xs text-gray-500">{full ? "Full" : left <= 5 ? `Only ${left} left` : "Available"}</div>
+                      <div className="text-xs text-ink-muted">{full ? "Full" : left <= 5 ? `Only ${left} left` : "Available"}</div>
                     </button>
                   );
                 })}
@@ -191,11 +191,11 @@ export default function Checkout() {
       <ErrorText>{error}</ErrorText>
 
       {/* Sticky action bar: always visible, tells the customer what's missing */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
         <div className="mx-auto flex max-w-xl items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="text-lg font-bold leading-tight">{rupees(bill.total)}</div>
-            <div className="truncate text-xs text-gray-500">
+            <div className="truncate text-xs text-ink-muted">
               {!addressId ? "Add a delivery address" : !slotId ? "Choose a delivery time" : !method ? "Choose payment" : bill.fee === 0 ? "Free delivery" : `incl. ${rupees(bill.fee)} delivery`}
             </div>
           </div>
@@ -211,7 +211,7 @@ export default function Checkout() {
 function StepHeader({ n, title, done }: { n: number; title: string; done: boolean }) {
   return (
     <h2 className="mb-3 flex items-center gap-2 font-semibold">
-      <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${done ? "bg-brand text-white" : "bg-gray-200 text-gray-600"}`}>
+      <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${done ? "bg-brand text-white" : "bg-line text-ink-soft"}`}>
         {done ? "✓" : n}
       </span>
       {title}
@@ -221,9 +221,9 @@ function StepHeader({ n, title, done }: { n: number; title: string; done: boolea
 
 function PayOption(p: { checked: boolean; onChange: () => void; title: string; sub: string; disabled?: boolean }) {
   return (
-    <label className={`flex cursor-pointer gap-3 rounded-xl border p-3 ${p.disabled ? "opacity-50" : ""} ${p.checked ? "border-brand bg-brand-light" : "border-gray-200"}`}>
+    <label className={`flex cursor-pointer gap-3 rounded-xl border p-3 ${p.disabled ? "opacity-50" : ""} ${p.checked ? "border-brand bg-brand-light" : "border-line"}`}>
       <input type="radio" name="pay" checked={p.checked} disabled={p.disabled} onChange={p.onChange} className="mt-1 accent-brand" />
-      <span><b className="block text-sm">{p.title}</b><span className="text-xs text-gray-600">{p.sub}</span></span>
+      <span><b className="block text-sm">{p.title}</b><span className="text-xs text-ink-soft">{p.sub}</span></span>
     </label>
   );
 }

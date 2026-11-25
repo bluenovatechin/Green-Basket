@@ -132,7 +132,7 @@ export default function ProductEdit() {
           <label className="text-sm">
             <span className="mb-1 block font-medium">Photo</span>
             <input type="file" accept="image/*" onChange={(e) => onImage(e.target.files?.[0])} disabled={uploading} />
-            {uploading && <span className="block text-gray-500">Uploading…</span>}
+            {uploading && <span className="block text-ink-muted">Uploading…</span>}
           </label>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -154,14 +154,14 @@ export default function ProductEdit() {
         </div>
         <Field label="Description (optional)"><textarea className={inputClass} rows={2} value={p.description} onChange={(e) => setP({ ...p, description: e.target.value })} /></Field>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-brand" checked={p.is_active} onChange={(e) => setP({ ...p, is_active: e.target.checked })} /> Show in shop</label>
-        {isNew && <p className="text-xs text-gray-500">Stock starts at zero. Add stock from the Products page after saving.</p>}
+        {isNew && <p className="text-xs text-ink-muted">Stock starts at zero. Add stock from the Products page after saving.</p>}
       </Card>
 
       <Card className="space-y-3">
         <h2 className="font-semibold">Pack sizes</h2>
-        <p className="text-xs text-gray-500">Quantity per pack in {unitInfo.packHint}. All pack sizes share the same stock.</p>
+        <p className="text-xs text-ink-muted">Quantity per pack in {unitInfo.packHint}. All pack sizes share the same stock.</p>
         {variants.map((v, i) => (
-          <div key={v.id ?? i} className="grid grid-cols-2 gap-2 rounded-xl border border-gray-200 p-3 sm:grid-cols-5">
+          <div key={v.id ?? i} className="grid grid-cols-2 gap-2 rounded-xl border border-line p-3 sm:grid-cols-5">
             <input className={inputClass} placeholder="Label, e.g. 500 g" value={v.label} onChange={(e) => setV(i, "label", e.target.value)} />
             <input className={inputClass} placeholder={`Qty (${p.unit})`} inputMode="decimal" value={v.pack_qty} onChange={(e) => setV(i, "pack_qty", e.target.value)} />
             <input className={inputClass} placeholder="Price ₹" inputMode="decimal" value={v.price} onChange={(e) => setV(i, "price", e.target.value)} />

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
@@ -31,23 +31,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile((data as Profile) ?? null);
   }, []);
 
+  const userIdRef = useRef<string | null | undefined>(undefined);
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
+      userIdRef.current = data.session?.user.id ?? null;
       setSession(data.session);
       await loadProfile(data.session);
       setLoading(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      const newId = s?.user.id ?? null;
+      const switched = userIdRef.current !== undefined && userIdRef.current !== newId;
+      userIdRef.current = newId;
       setSession(s);
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+      if (switched || event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
         // defer: never await Supabase calls inside this callback
         setTimeout(() => {
+          // a different person (or nobody) is now logged in: forget everything cached for the previous one
+          if (switched) qc.clear();
           void loadProfile(s);
-          if (event === "SIGNED_OUT") qc.clear();
         }, 0);
       }
     });
-    return () => sub.subscription.unsubscribe();
+
+    // One browser = one logged-in person, in every tab (like Blinkit or Gmail).
+    // The login is stored once per browser; when another tab logs in, logs out or switches account,
+    // this tab picks it up immediately and reloads so it never shows the previous person's data.
+    const onStorage = async (e: StorageEvent) => {
+      if (e.key !== null && !/^sb-.*-auth-token$/.test(e.key)) return;
+      const { data } = await supabase.auth.getSession();
+      const id = data.session?.user.id ?? null;
+      if (userIdRef.current !== undefined && id !== userIdRef.current) {
+        qc.clear();
+        window.location.reload();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      sub.subscription.unsubscribe();
+      window.removeEventListener("storage", onStorage);
+    };
   }, [loadProfile, qc]);
 
   const value: AuthState = {

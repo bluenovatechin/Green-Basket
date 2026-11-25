@@ -7,6 +7,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { rupees, slotLabel, todayIST } from "../../lib/format";
 import { friendlyError } from "../../lib/errors";
 import type { Order } from "../../lib/types";
+import Icon from "../../components/Icon";
 import { Button, Card, Empty, ErrorText, FullPageSpinner, StatusBadge } from "../../components/ui";
 
 // Simple phone screen for riders: today's assigned orders, call / map, start and complete delivery.
@@ -50,7 +51,7 @@ export default function RiderHome() {
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-gray-50">
+    <div className="mx-auto min-h-screen max-w-md bg-surface">
       <header className="sticky top-0 z-10 flex items-center justify-between bg-brand px-4 py-3 text-white">
         <span className="font-bold">My deliveries</span>
         <span className="space-x-3 text-sm">
@@ -71,7 +72,7 @@ export default function RiderHome() {
                   <b>{o.order_number}</b>
                   <StatusBadge status={o.status} />
                 </div>
-                <div className="text-sm text-gray-600">{slotLabel(o.delivery_slots)}</div>
+                <div className="text-sm text-ink-soft">{slotLabel(o.delivery_slots)}</div>
                 <div className="text-sm">
                   <b>{a.full_name}</b><br />
                   {a.line1}{a.line2 ? `, ${a.line2}` : ""}{a.landmark ? `, near ${a.landmark}` : ""}, {a.pincode}
@@ -81,14 +82,14 @@ export default function RiderHome() {
                   {collect ? `Collect ${rupees(o.total)}` : "Already paid"}
                 </div>
                 <details className="text-sm">
-                  <summary className="cursor-pointer text-gray-600">{o.order_items?.filter((i) => !i.is_unavailable).length} items</summary>
+                  <summary className="cursor-pointer text-ink-soft">{o.order_items?.filter((i) => !i.is_unavailable).length} items</summary>
                   <ul className="mt-1 list-inside list-disc">
                     {o.order_items?.filter((i) => !i.is_unavailable).map((i) => <li key={i.id}>{i.product_name} {i.variant_label} × {i.quantity}</li>)}
                   </ul>
                 </details>
                 <div className="grid grid-cols-2 gap-2">
-                  <a href={`tel:${a.phone}`} className="rounded-xl border border-gray-300 bg-white py-2.5 text-center font-semibold">📞 Call</a>
-                  <a href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`} target="_blank" rel="noreferrer" className="rounded-xl border border-gray-300 bg-white py-2.5 text-center font-semibold">🗺️ Map</a>
+                  <a href={`tel:${a.phone}`} className="rounded-full bg-white ring-1 ring-inset ring-line py-2.5 text-center font-semibold"><Icon name="phone" size={18} className="mr-2" />Call</a>
+                  <a href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`} target="_blank" rel="noreferrer" className="rounded-full bg-white ring-1 ring-inset ring-line py-2.5 text-center font-semibold"><Icon name="pin" size={18} className="mr-2" />Map</a>
                 </div>
                 {o.status === "packed" && (
                   <Button className="w-full" loading={busy === o.id} onClick={() => act(o.id, () => rpc("set_order_status", { p_order_id: o.id, p_status: "out_for_delivery", p_note: null }))}>

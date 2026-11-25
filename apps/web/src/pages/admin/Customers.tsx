@@ -35,7 +35,7 @@ export default function Customers() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold">Customers</h1>
-        <p className="text-sm text-gray-600">Everyone who has signed up, with their orders and spend.</p>
+        <p className="text-sm text-ink-soft">Everyone who has signed up, with their orders and spend.</p>
       </div>
       <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); setQ(search.trim()); }}>
         <input className={inputClass} placeholder="Search name, email or phone" value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -46,20 +46,20 @@ export default function Customers() {
       {list.isLoading ? <FullPageSpinner /> : !list.data?.length ? <Empty title="No customers found" /> : (
         <Card className="overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+            <thead className="bg-surface text-xs uppercase tracking-wide text-ink-muted">
               <tr><th className="p-3">Customer</th><th className="p-3">Phone</th><th className="p-3 text-right">Orders</th><th className="p-3 text-right">Spent</th><th className="p-3">Last order</th><th className="p-3" /></tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-line">
               {list.data.map((c) => (
                 <tr key={c.id} className={c.is_blocked ? "bg-red-50/50" : ""}>
                   <td className="p-3">
                     <div className="font-medium">{c.full_name || "—"}{c.is_blocked && <span className="ml-2 rounded bg-red-100 px-1.5 text-xs text-red-700">Blocked</span>}</div>
-                    <div className="text-xs text-gray-500">{c.email}</div>
+                    <div className="text-xs text-ink-muted">{c.email}</div>
                   </td>
                   <td className="p-3">{c.phone ? <a href={`tel:${c.phone}`} className="text-brand">{c.phone}</a> : "—"}</td>
-                  <td className="p-3 text-right">{c.orders_count}<span className="block text-xs text-gray-500">{c.delivered_count} delivered</span></td>
+                  <td className="p-3 text-right">{c.orders_count}<span className="block text-xs text-ink-muted">{c.delivered_count} delivered</span></td>
                   <td className="p-3 text-right font-semibold">{rupees(c.total_spent)}</td>
-                  <td className="p-3 text-gray-600">{c.last_order_at ? dateTime(c.last_order_at) : "Never"}</td>
+                  <td className="p-3 text-ink-soft">{c.last_order_at ? dateTime(c.last_order_at) : "Never"}</td>
                   <td className="p-3 text-right">
                     <button className={c.is_blocked ? "text-brand" : "text-red-600"} onClick={() => toggleBlock(c)}>{c.is_blocked ? "Unblock" : "Block"}</button>
                   </td>

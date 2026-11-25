@@ -50,7 +50,7 @@ export default function Account() {
         </Link>
       )}
       <Card className="space-y-3">
-        <div className="text-sm text-gray-600">Logged in as <b>{profile?.email}</b></div>
+        <div className="text-sm text-ink-soft">Logged in as <b>{profile?.email}</b></div>
         <Field label="Name"><input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} /></Field>
         <Field label="Mobile number" hint="The rider calls this number if needed.">
           <input className={inputClass} value={phone} inputMode="numeric" maxLength={10} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} />
@@ -67,7 +67,7 @@ export default function Account() {
         ) : (
           <div className="space-y-2">
             {addresses.data?.map((a) => (
-              <div key={a.id} className="flex items-start justify-between gap-2 rounded-xl border border-gray-200 p-3 text-sm">
+              <div key={a.id} className="flex items-start justify-between gap-2 rounded-xl border border-line p-3 text-sm">
                 <span><b>{a.label}</b>{a.is_default && " · default"}<br />{a.line1}, {a.city} {a.pincode}</span>
                 <button className="text-red-600" onClick={() => remove(a.id)}>Delete</button>
               </div>

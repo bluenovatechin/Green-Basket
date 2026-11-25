@@ -57,7 +57,7 @@ export default function AdminOrderDetail() {
   return (
     <div className="space-y-4">
       <div className="no-print flex flex-wrap items-center justify-between gap-2">
-        <button onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/admin/orders"))} className="text-sm font-medium text-gray-600">← Back to orders</button>
+        <button onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/admin/orders"))} className="text-sm font-medium text-ink-soft">← Back to orders</button>
         <Button variant="secondary" onClick={() => window.print()}>Print packing slip</Button>
       </div>
 
@@ -78,12 +78,12 @@ export default function AdminOrderDetail() {
             <p className="mt-1 text-sm"><b>Payment:</b> {o.payment_method === "cod" ? `Collect ${rupees(o.total)} (cash/UPI)` : "Paid online"} · {o.payment_status}</p>
 
             <table className="mt-3 w-full text-sm">
-              <thead className="text-left text-gray-500"><tr><th className="py-1">Item</th><th>Qty</th><th className="text-right">Amount</th><th className="no-print" /></tr></thead>
-              <tbody className="divide-y divide-gray-100">
+              <thead className="text-left text-ink-muted"><tr><th className="py-1">Item</th><th>Qty</th><th className="text-right">Amount</th><th className="no-print" /></tr></thead>
+              <tbody className="divide-y divide-line">
                 {o.order_items?.map((i) => (
-                  <tr key={i.id} className={i.is_unavailable ? "text-gray-400 line-through" : ""}>
+                  <tr key={i.id} className={i.is_unavailable ? "text-ink-muted line-through" : ""}>
                     <td className="py-2">{i.product_name} · {i.variant_label}</td>
-                    <td>{i.quantity} <span className="text-xs text-gray-500">({qty(i.unit, i.pack_qty * i.quantity)})</span></td>
+                    <td>{i.quantity} <span className="text-xs text-ink-muted">({qty(i.unit, i.pack_qty * i.quantity)})</span></td>
                     <td className="text-right">{rupees(i.line_total)}</td>
                     <td className="no-print pl-2 text-right">
                       {editable && !i.is_unavailable && (
@@ -154,7 +154,7 @@ export default function AdminOrderDetail() {
             <h2 className="mb-2 font-semibold">History</h2>
             <ul className="space-y-1 text-sm">
               {o.order_events?.map((e) => (
-                <li key={e.id}><b>{STATUS_LABEL[e.to_status]}</b>{e.note ? ` – ${e.note}` : ""}<div className="text-xs text-gray-500">{dateTime(e.created_at)}</div></li>
+                <li key={e.id}><b>{STATUS_LABEL[e.to_status]}</b>{e.note ? ` – ${e.note}` : ""}<div className="text-xs text-ink-muted">{dateTime(e.created_at)}</div></li>
               ))}
             </ul>
           </Card>
