@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { AccountMenu } from "../../components/CustomerLayout";
+import { asset } from "../../lib/base";
 
 type NavItem = { to: string; label: string; icon: string; adminOnly?: boolean; end?: boolean };
 const GROUPS: { title: string; items: NavItem[] }[] = [
@@ -83,7 +84,7 @@ export default function AdminLayout() {
         <div className="flex items-center gap-2">
           <button className="rounded-lg p-2 text-xl lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">☰</button>
           <Link to="/admin" className="flex items-center gap-2 lg:w-64 lg:px-5">
-            <img src="/favicon.svg" alt="" className="h-8 w-8" />
+            <img src={asset("favicon.svg")} alt="" className="h-8 w-8" />
             <span className="font-extrabold text-brand">Green Basket</span>
             <span className="rounded-md bg-gray-900 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Admin</span>
           </Link>

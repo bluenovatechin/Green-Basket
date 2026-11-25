@@ -3,6 +3,7 @@ import { Navigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../auth/AuthProvider";
 import { friendlyError } from "../../lib/errors";
+import { appUrl, asset } from "../../lib/base";
 import { Button, Card, ErrorText, Field, inputClass } from "../../components/ui";
 import Turnstile, { turnstileEnabled } from "../../components/Turnstile";
 
@@ -44,7 +45,7 @@ export default function Login() {
     setBusy("google");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/login?next=${encodeURIComponent(safeNext)}` },
+      options: { redirectTo: appUrl(`/login?next=${encodeURIComponent(safeNext)}`) },
     });
     if (error) {
       setBusy(null);
@@ -99,7 +100,7 @@ export default function Login() {
   return (
     <div className="mx-auto max-w-sm py-6">
       <div className="mb-5 text-center">
-        <img src="/favicon.svg" alt="" className="mx-auto mb-3 h-14 w-14" />
+        <img src={asset("favicon.svg")} alt="" className="mx-auto mb-3 h-14 w-14" />
         <h1 className="text-2xl font-bold">Welcome to Green Basket</h1>
         <p className="text-sm text-gray-600">Fresh fruits &amp; vegetables at your door</p>
       </div>

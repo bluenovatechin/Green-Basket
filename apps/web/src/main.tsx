@@ -14,7 +14,8 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      {/* basename lets the app run in a folder, e.g. github.io/Green-Basket/ */}
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "") || "/"}>
         <AuthProvider>
           <CartProvider>
             <App />

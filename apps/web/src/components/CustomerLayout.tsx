@@ -3,11 +3,12 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import { useAuth } from "../auth/AuthProvider";
 import { useCart } from "../state/cart";
 import { rupees } from "../lib/format";
+import { asset } from "../lib/base";
 
 export function Logo() {
   return (
     <Link to="/" className="flex items-center gap-2" aria-label="Green Basket home">
-      <img src="/favicon.svg" alt="" className="h-9 w-9" />
+      <img src={asset("favicon.svg")} alt="" className="h-9 w-9" />
       <span className="leading-tight">
         <span className="block text-lg font-extrabold tracking-tight text-brand">Green Basket</span>
         <span className="hidden text-[11px] font-medium text-gray-500 sm:block">Eat Fresh. Live Better.</span>
