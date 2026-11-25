@@ -209,7 +209,7 @@ function StaffRow({ person, isMe, onChanged }: { person: Profile; isMe: boolean;
   return (
     <li className="py-3">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-surface text-sm font-bold text-ink-soft">
+        <div className="flex h-10 w-10 flex-none items-center justify-center rounded-md bg-surface text-sm font-bold text-ink-soft">
           {(person.full_name || person.email).slice(0, 1).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
@@ -228,10 +228,10 @@ function StaffRow({ person, isMe, onChanged }: { person: Profile; isMe: boolean;
           </select>
           {!isMe && (
             <>
-              <button className="h-10 rounded-full px-3 text-sm font-semibold text-brand hover:bg-brand-light disabled:opacity-50" disabled={busy} onClick={resetPassword}>
+              <button className="h-10 rounded-md px-3 text-sm font-semibold text-brand hover:bg-brand-light disabled:opacity-50" disabled={busy} onClick={resetPassword}>
                 New password
               </button>
-              <button className="h-10 rounded-full px-3 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50" disabled={busy} onClick={() => changeRole("customer")}>
+              <button className="h-10 rounded-md px-3 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50" disabled={busy} onClick={() => changeRole("customer")}>
                 Remove
               </button>
             </>

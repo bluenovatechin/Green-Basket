@@ -6,6 +6,7 @@ import { dayLabel, rupees, time12, todayIST } from "../../lib/format";
 import type { Order, OrderStatus, Slot } from "../../lib/types";
 import { Card, Empty, FullPageSpinner, inputClass, StatusBadge } from "../../components/ui";
 import { ADMIN_PATH } from "../../lib/base";
+import { useIsAdmin } from "./AdminLayout";
 
 // Tabs follow the real workflow: new -> confirmed -> packed -> on the way -> delivered
 const TABS: { key: string; label: string; statuses: OrderStatus[] }[] = [
@@ -22,6 +23,7 @@ const TABS: { key: string; label: string; statuses: OrderStatus[] }[] = [
 export default function AdminOrders() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
+  const isAdmin = useIsAdmin();
   const date = params.get("date") ?? todayIST();
   const tabKey = params.get("tab") ?? "new";
   const slotId = params.get("slot") ?? "";
@@ -33,11 +35,13 @@ export default function AdminOrders() {
     setParams(p, { replace: true });
   };
 
-  useLiveOrders("", [["admin", "orders"], ["admin", "order-counts"]]);
+  // live updates need direct access to orders, which only admins have; packers refresh every 20 seconds
+  useLiveOrders(isAdmin ? "" : null, [["admin", "orders"], ["admin", "order-counts"]]);
 
   const counts = useQuery({
     queryKey: ["admin", "order-counts", date],
     queryFn: () => rpc<Partial<Record<OrderStatus, number>>>("admin_order_counts", { p_date: date }),
+    refetchInterval: isAdmin ? false : 20_000,
   });
   const slots = useQuery({
     queryKey: ["admin", "slots", date],
@@ -49,8 +53,12 @@ export default function AdminOrders() {
   });
   const orders = useQuery({
     queryKey: ["admin", "orders", date, tab.key, slotId],
-    refetchInterval: 60_000,
+    refetchInterval: isAdmin ? 60_000 : 20_000,
     queryFn: async () => {
+      if (!isAdmin) {
+        // packers: same list without any money (see migration 0011)
+        return rpc<Order[]>("staff_orders", { p_date: date, p_statuses: tab.statuses, p_slot_id: slotId || null });
+      }
       let q = supabase
         .from("orders")
         .select("id, order_number, status, payment_method, payment_status, total, address, rider_id, slot_id, created_at, delivery_slots!inner(slot_date, start_time, end_time)")
@@ -71,11 +79,11 @@ export default function AdminOrders() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Orders</h1>
-          <p className="text-sm text-ink-soft">Deliveries for <b>{dayLabel(date)}</b>. Updates live.</p>
+          <h1 className="display text-2xl">Orders</h1>
+          <p className="text-sm text-ink-soft">Deliveries for <b>{dayLabel(date)}</b>. {isAdmin ? "Updates live." : "Refreshes every 20 seconds."}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <div className="flex overflow-hidden rounded-full bg-white ring-1 ring-inset ring-line text-sm">
+          <div className="flex overflow-hidden rounded-md bg-white ring-1 ring-inset ring-line text-sm">
             {[["Today", todayIST()], ["Tomorrow", todayIST(1)]].map(([l, d]) => (
               <button key={d} onClick={() => set("date", d)} className={`px-3 py-2 font-medium ${date === d ? "bg-brand text-white" : "text-ink-soft"}`}>{l}</button>
             ))}
@@ -96,7 +104,7 @@ export default function AdminOrders() {
             <button key={t.key} onClick={() => set("tab", t.key)}
               className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold ${active ? "bg-gray-900 text-white" : "bg-white text-ink-soft hover:bg-surface"}`}>
               {t.label}
-              <span className={`rounded-full px-2 text-xs ${active ? "bg-white/20" : n > 0 && (t.key === "new" || t.key === "confirmed") ? "bg-brand-accent text-ink" : "bg-surface text-ink-soft"}`}>{n}</span>
+              <span className={`rounded-md px-2 text-xs ${active ? "bg-white/20" : n > 0 && (t.key === "new" || t.key === "confirmed") ? "bg-brand-accent text-ink" : "bg-surface text-ink-soft"}`}>{n}</span>
             </button>
           );
         })}
@@ -115,7 +123,7 @@ export default function AdminOrders() {
                   <div className="mt-1 text-sm">{o.address.full_name} · {o.address.line2 || o.address.line1}</div>
                   <div className="mt-1 flex justify-between text-sm text-ink-soft">
                     <span>{o.delivery_slots && `${time12(o.delivery_slots.start_time)}–${time12(o.delivery_slots.end_time)}`} · {o.payment_method === "cod" ? "COD" : "Paid online"}</span>
-                    <b className="text-ink">{rupees(o.total)}</b>
+                    {isAdmin && <b className="text-ink">{rupees(o.total)}</b>}
                   </div>
                 </Link>
               </li>
@@ -123,7 +131,7 @@ export default function AdminOrders() {
           </ul>
           <table className="hidden w-full text-left text-sm md:table">
             <thead className="bg-surface text-xs uppercase tracking-wide text-ink-muted">
-              <tr><th className="p-3">Order</th><th className="p-3">Customer</th><th className="p-3">Slot</th><th className="p-3">Payment</th><th className="p-3 text-right">Total</th><th className="p-3">Status</th></tr>
+              <tr><th className="p-3">Order</th><th className="p-3">Customer</th><th className="p-3">Slot</th><th className="p-3">Payment</th>{isAdmin && <th className="p-3 text-right">Total</th>}<th className="p-3">Status</th></tr>
             </thead>
             <tbody className="divide-y divide-line">
               {orders.data.map((o) => (
@@ -131,8 +139,8 @@ export default function AdminOrders() {
                   <td className="p-3 font-semibold text-brand">{o.order_number}</td>
                   <td className="p-3">{o.address.full_name}<div className="text-xs text-ink-muted">{o.address.line2 || o.address.line1} · {o.address.pincode}</div></td>
                   <td className="whitespace-nowrap p-3">{o.delivery_slots && `${time12(o.delivery_slots.start_time)}–${time12(o.delivery_slots.end_time)}`}</td>
-                  <td className="p-3">{o.payment_method === "cod" ? "Cash/UPI on delivery" : "Online"}{o.payment_status === "paid" && <span className="ml-1 text-brand">✓</span>}</td>
-                  <td className="p-3 text-right font-semibold">{rupees(o.total)}</td>
+                  <td className="p-3">{o.payment_method === "cod" ? "Cash/UPI on delivery" : "Online"}{isAdmin && o.payment_status === "paid" && <span className="ml-1 text-brand">✓</span>}</td>
+                  {isAdmin && <td className="p-3 text-right font-semibold">{rupees(o.total)}</td>}
                   <td className="p-3"><StatusBadge status={o.status} />{!o.rider_id && o.status === "packed" && <div className="mt-0.5 text-xs font-medium text-amber-700">Assign rider</div>}</td>
                 </tr>
               ))}

@@ -6,10 +6,12 @@ import { friendlyError } from "../../lib/errors";
 import { asset } from "../../lib/base";
 import Icon from "../../components/Icon";
 import { Button, ErrorText, Field, FullPageSpinner, inputClass } from "../../components/ui";
+import { usePrivatePage } from "../../lib/seo";
 
 // Opened from the "Reset your password" email. Supabase logs the person in from the link,
 // then they choose a new password here.
 export default function ResetPassword() {
+  usePrivatePage("Set a New Password");
   const { session, loading } = useAuth();
   const navigate = useNavigate();
   const [waited, setWaited] = useState(false);
@@ -45,7 +47,7 @@ export default function ResetPassword() {
       <img src={asset("favicon.svg")} alt="" className="mb-6 h-12 w-12 rounded-2xl" />
       {!session ? (
         <>
-          <h1 className="text-2xl font-extrabold">Link expired</h1>
+          <h1 className="display text-3xl">Link expired</h1>
           <p className="mt-2 text-ink-muted">
             This reset link has expired, was already used, or was opened in a different browser. Request a new one and open it on this device.
           </p>
@@ -53,14 +55,14 @@ export default function ResetPassword() {
         </>
       ) : done ? (
         <>
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand-light text-brand"><Icon name="check" size={24} /></div>
-          <h1 className="text-2xl font-extrabold">Password updated</h1>
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-brand-light text-brand"><Icon name="check" size={24} /></div>
+          <h1 className="display text-3xl">Password updated</h1>
           <p className="mt-2 text-ink-muted">You're logged in. Taking you to the shop…</p>
         </>
       ) : (
         <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void save(); }} noValidate>
           <div>
-            <h1 className="text-2xl font-extrabold">Set a new password</h1>
+            <h1 className="display text-3xl">Set a new password</h1>
             <p className="mt-1 text-ink-muted">For {session.user.email}</p>
           </div>
           <Field label="New password">

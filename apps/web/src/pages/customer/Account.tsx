@@ -9,8 +9,10 @@ import { supabase } from "../../lib/supabase";
 import { friendlyError } from "../../lib/errors";
 import AddressForm from "../../components/AddressForm";
 import { Button, Card, ErrorText, Field, inputClass } from "../../components/ui";
+import { usePrivatePage } from "../../lib/seo";
 
 export default function Account() {
+  usePrivatePage("My Account");
   const { profile, refreshProfile, signOut } = useAuth();
   const addresses = useAddresses();
   const settings = useSettings();
@@ -43,7 +45,7 @@ export default function Account() {
 
   return (
     <div className="mx-auto max-w-xl space-y-4">
-      <h1 className="text-xl font-bold">Your account</h1>
+      <h1 className="display text-3xl">Your account</h1>
       <ClaimStoreBanner />
       {profile?.role === "rider" && (
         <Link to="/rider" className="block rounded-2xl bg-brand-light p-4 font-semibold text-brand">

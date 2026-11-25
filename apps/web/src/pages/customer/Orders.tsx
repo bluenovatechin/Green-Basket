@@ -4,10 +4,12 @@ import { dateTime, rupees, slotLabel } from "../../lib/format";
 import type { Order } from "../../lib/types";
 import Icon from "../../components/Icon";
 import { Button, Empty, FullPageSpinner, StatusBadge } from "../../components/ui";
+import { usePrivatePage } from "../../lib/seo";
 
 const ACTIVE = ["pending_payment", "placed", "confirmed", "packed", "out_for_delivery"];
 
 export default function Orders() {
+  usePrivatePage("My Orders");
   const { data, isLoading } = useMyOrders();
   if (isLoading) return <FullPageSpinner />;
   if (!data?.length) {
@@ -23,7 +25,7 @@ export default function Orders() {
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      <h1 className="text-xl font-bold">My orders</h1>
+      <h1 className="display text-3xl">My orders</h1>
       {active.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">In progress</h2>

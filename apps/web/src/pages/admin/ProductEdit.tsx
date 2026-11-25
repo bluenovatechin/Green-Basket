@@ -132,7 +132,7 @@ export default function ProductEdit() {
   return (
     <div className="mx-auto max-w-5xl pb-28">
       <div className="mb-4 flex items-center gap-3">
-        <button onClick={() => navigate(`${ADMIN_PATH}/products`)} className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white ring-1 ring-line hover:bg-surface" aria-label="Back to products">
+        <button onClick={() => navigate(`${ADMIN_PATH}/products`)} className="flex h-10 w-10 flex-none items-center justify-center rounded-md bg-white ring-1 ring-line hover:bg-surface" aria-label="Back to products">
           <span className="text-lg">←</span>
         </button>
         <div className="min-w-0">
@@ -177,14 +177,14 @@ export default function ProductEdit() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-sm font-semibold">
                       Pack {i + 1}
-                      {off > 0 && <span className="rounded-full bg-brand-light px-2 py-0.5 text-xs text-brand">{off}% off</span>}
-                      {!v.is_active && <span className="rounded-full bg-line px-2 py-0.5 text-xs text-ink-soft">off</span>}
+                      {off > 0 && <span className="rounded-md bg-brand-light px-2 py-0.5 text-xs text-brand">{off}% off</span>}
+                      {!v.is_active && <span className="rounded-md bg-line px-2 py-0.5 text-xs text-ink-soft">off</span>}
                     </div>
                     <div className="flex items-center gap-1">
-                      <button className="h-8 w-8 rounded-full text-ink-soft hover:bg-surface disabled:opacity-30" disabled={i === 0} onClick={() => moveV(i, -1)} aria-label="Move up">↑</button>
-                      <button className="h-8 w-8 rounded-full text-ink-soft hover:bg-surface disabled:opacity-30" disabled={i === variants.length - 1} onClick={() => moveV(i, 1)} aria-label="Move down">↓</button>
+                      <button className="h-8 w-8 rounded-md text-ink-soft hover:bg-surface disabled:opacity-30" disabled={i === 0} onClick={() => moveV(i, -1)} aria-label="Move up">↑</button>
+                      <button className="h-8 w-8 rounded-md text-ink-soft hover:bg-surface disabled:opacity-30" disabled={i === variants.length - 1} onClick={() => moveV(i, 1)} aria-label="Move down">↓</button>
                       <button
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-red-600 hover:bg-red-50"
+                        className="flex h-8 w-8 items-center justify-center rounded-md text-red-600 hover:bg-red-50"
                         aria-label="Remove pack size"
                         onClick={() => { if (v.id) setRemoved((r) => [...r, v.id!]); setVariants((vs) => vs.filter((_, j) => j !== i)); }}
                       >
@@ -268,7 +268,7 @@ export default function ProductEdit() {
       </div>
 
       {/* sticky save bar (sits above the phone's home indicator) */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-white/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:left-64">
+      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-line bg-white/95 px-4 py-3 backdrop-blur lg:bottom-0 lg:left-64 lg:pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <div className="mx-auto flex max-w-5xl items-center gap-2">
           <div className="min-w-0 flex-1"><ErrorText>{error}</ErrorText></div>
           <Button variant="secondary" onClick={() => navigate(`${ADMIN_PATH}/products`)}>Cancel</Button>
@@ -366,7 +366,7 @@ function PhotoCard({ url, preview, name, onChange }: { url: string | null; previ
           </span>
         )}
         {preview && !uploading && (
-          <span className="absolute inset-x-3 bottom-3 rounded-full bg-black/60 py-2 text-center text-xs font-semibold text-white opacity-0 transition group-hover:opacity-100">
+          <span className="absolute inset-x-3 bottom-3 rounded-md bg-black/60 py-2 text-center text-xs font-semibold text-white opacity-0 transition group-hover:opacity-100">
             Change photo
           </span>
         )}

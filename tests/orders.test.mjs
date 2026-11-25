@@ -185,9 +185,36 @@ test("delivery flow: packer -> rider -> delivered with COD collection", async ()
   await expectError(as(s.db, s.admin, (tx) => tx.query("select public.set_order_status($1, 'out_for_delivery')", [o.order_id])), "RIDER_NOT_ASSIGNED");
   await as(s.db, s.admin, (tx) => tx.query("select public.assign_rider($1, $2)", [o.order_id, rider]));
 
-  // rider sees only their order
-  const seen = await as(s.db, rider, (tx) => tx.query("select id from public.orders"));
-  assert.equal(seen.rows.length, 1);
+  // staff never read the orders table (it holds money); they use the money-free functions
+  const direct = await as(s.db, rider, (tx) => tx.query("select id from public.orders"));
+  assert.equal(direct.rows.length, 0);
+  const packerDirect = await as(s.db, packer, (tx) => tx.query("select id from public.orders"));
+  assert.equal(packerDirect.rows.length, 0);
+  const packerProfiles = await as(s.db, packer, (tx) => tx.query("select id from public.profiles"));
+  assert.equal(packerProfiles.rows.length, 1); // only their own
+
+  // rider sees only their order, with the cash to collect but no other money
+  const mine = await as(s.db, rider, (tx) => tx.query("select public.rider_orders('active') as v").then((r) => r.rows[0].v));
+  assert.equal(mine.length, 1);
+  assert.ok(Number(mine[0].collect_amount) > 0);
+  for (const k of ["total", "subtotal", "delivery_fee", "refunded_amount"]) assert.equal(mine[0][k], undefined);
+  assert.equal(mine[0].order_items[0].line_total, undefined);
+  const other = await createUser(s.db, { role: "rider" });
+  const none = await as(s.db, other, (tx) => tx.query("select public.rider_orders('active') as v").then((r) => r.rows[0].v));
+  assert.equal(none.length, 0);
+
+  // packer: order details and dashboard without money; customers list forbidden
+  const so = await as(s.db, packer, (tx) => tx.query("select public.staff_order($1) as v", [o.order_id]).then((r) => r.rows[0].v));
+  assert.equal(so.total, undefined);
+  assert.equal(so.order_items[0].line_total, undefined);
+  assert.equal(so.order_items[0].unit_price, undefined);
+  const dash = await as(s.db, packer, (tx) => tx.query("select public.dashboard_summary(current_date) as v").then((r) => r.rows[0].v));
+  assert.equal(dash.delivered_revenue, undefined);
+  assert.equal(dash.cod_collected, undefined);
+  const adminDash = await as(s.db, s.admin, (tx) => tx.query("select public.dashboard_summary(current_date) as v").then((r) => r.rows[0].v));
+  assert.notEqual(adminDash.delivered_revenue, undefined);
+  await expectError(as(s.db, packer, (tx) => tx.query("select * from public.admin_customers()")), "FORBIDDEN");
+  await expectError(as(s.db, rider, (tx) => tx.query("select public.staff_orders(current_date)")), "FORBIDDEN");
 
   await as(s.db, rider, (tx) => tx.query("select public.set_order_status($1, 'out_for_delivery')", [o.order_id]));
   await expectError(as(s.db, rider, (tx) => tx.query("select public.complete_delivery($1)", [o.order_id])), "COLLECTION_METHOD_REQUIRED");

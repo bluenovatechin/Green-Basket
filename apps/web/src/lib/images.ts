@@ -1,6 +1,6 @@
 import { asset } from "./base";
 
-// Demo photos bundled with the app (public/images). A photo uploaded in Admin always wins.
+// Demo photos bundled with the app (public/images, WebP in two sizes). A photo uploaded in Admin always wins.
 const BY_NAME: [RegExp, string][] = [
   [/tomato|tamatar/i, "tomato"],
   [/onion|pyaz|dungli/i, "onion"],
@@ -13,10 +13,26 @@ const BY_NAME: [RegExp, string][] = [
   [/dragon|dragan|pitaya/i, "dragon-fruit"],
 ];
 
-export function productImage(p: { name: string; image_url?: string | null }): string | null {
-  if (p.image_url) return p.image_url;
+export interface ImgSet { src: string; srcSet?: string }
+
+const bundled = (path: string): ImgSet => ({
+  src: asset(`${path}.webp`),
+  srcSet: `${asset(`${path}-sm.webp`)} 240w, ${asset(`${path}.webp`)} 480w`,
+});
+
+/** Old baskets saved in the browser may still point at the former .jpg demo photos. */
+function upgradeLegacy(url: string): string {
+  return /\/images\/(products\/)?[\w-]+\.jpg$/.test(url) ? url.replace(/\.jpg$/, ".webp") : url;
+}
+
+export function productImageSet(p: { name: string; image_url?: string | null }): ImgSet | null {
+  if (p.image_url) return { src: upgradeLegacy(p.image_url) };
   const hit = BY_NAME.find(([re]) => re.test(p.name));
-  return hit ? asset(`images/products/${hit[1]}.jpg`) : null;
+  return hit ? bundled(`images/products/${hit[1]}`) : null;
+}
+
+export function productImage(p: { name: string; image_url?: string | null }): string | null {
+  return productImageSet(p)?.src ?? null;
 }
 
 const CATEGORY: Record<string, string> = {
@@ -25,8 +41,16 @@ const CATEGORY: Record<string, string> = {
   fruits: "cat-fruits",
 };
 
-export function categoryImage(slug: string): string | null {
-  return CATEGORY[slug] ? asset(`images/${CATEGORY[slug]}.jpg`) : null;
+export function categoryImageSet(slug: string): ImgSet | null {
+  return CATEGORY[slug] ? bundled(`images/${CATEGORY[slug]}`) : null;
 }
 
-export const heroImage = () => asset("images/hero.jpg");
+export function categoryImage(slug: string): string | null {
+  return categoryImageSet(slug)?.src ?? null;
+}
+
+export const heroImageSet = (): ImgSet => ({
+  src: asset("images/hero.webp"),
+  srcSet: `${asset("images/hero-sm.webp")} 560w, ${asset("images/hero.webp")} 960w`,
+});
+export const heroImage = () => heroImageSet().src;

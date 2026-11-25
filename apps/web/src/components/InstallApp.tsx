@@ -3,21 +3,29 @@ import { rememberDismissed, useInstall, wasDismissedRecently } from "../lib/inst
 import { asset } from "../lib/base";
 import Icon from "./Icon";
 import { Button } from "./ui";
+import { useConsent } from "../lib/consent";
+import { useCart } from "../state/cart";
 
-/** Slim "Install the app" banner for the shop (hidden once installed, or for 7 days after "Not now"). */
+/**
+ * Floating "Install the app" card (hidden once installed, or for 7 days after "Not now").
+ * It floats instead of sitting in the page, so appearing a moment after load never shifts the layout.
+ * It waits until the cookie choice is made and stays out of the way of the basket bar.
+ */
 export function InstallBanner() {
   const install = useInstall();
+  const { showBanner: cookieBannerOpen } = useConsent();
+  const { count } = useCart();
   const [hidden, setHidden] = useState(wasDismissedRecently());
   const [iosOpen, setIosOpen] = useState(false);
 
-  if (hidden || install.installed || (!install.canPrompt && !install.needsIOSSteps)) return null;
+  if (hidden || cookieBannerOpen || install.installed || (!install.canPrompt && !install.needsIOSSteps)) return null;
 
   const dismiss = () => { rememberDismissed(); setHidden(true); };
 
   return (
     <>
-      <div className="flex items-center gap-3 rounded-3xl bg-white p-3 pr-2 shadow-soft ring-1 ring-line/60">
-        <img src={asset("icons/icon-192.png")} alt="" className="h-11 w-11 flex-none rounded-2xl" />
+      <div role="region" aria-label="Install the app" className={`fixed inset-x-3 z-40 flex items-center gap-3 rounded-2xl bg-paper p-3 pr-2 shadow-lift ring-1 ring-line sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[400px] ${count > 0 ? "bottom-[calc(140px+env(safe-area-inset-bottom))]" : "bottom-[calc(76px+env(safe-area-inset-bottom))]"}`}>
+        <img src={asset("icons/icon-192.png")} alt="" width={44} height={44} className="h-11 w-11 flex-none rounded-md" />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-bold">Get the Green Basket app</div>
           <div className="truncate text-xs text-ink-muted">Faster ordering, opens from your home screen</div>
@@ -33,7 +41,7 @@ export function InstallBanner() {
         >
           Install
         </Button>
-        <button onClick={dismiss} className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-ink-muted hover:bg-surface" aria-label="Not now">
+        <button onClick={dismiss} className="flex h-9 w-9 flex-none items-center justify-center rounded-md text-ink-muted hover:bg-surface" aria-label="Not now">
           <Icon name="x" size={18} />
         </button>
       </div>
@@ -49,9 +57,9 @@ export function InstallCard() {
   if (install.installed) return null;
 
   return (
-    <div className="rounded-3xl bg-white p-5 shadow-soft ring-1 ring-line/60">
+    <div className="rounded-lg bg-paper p-5 ring-1 ring-line">
       <div className="flex items-center gap-3">
-        <img src={asset("icons/icon-192.png")} alt="" className="h-12 w-12 rounded-2xl" />
+        <img src={asset("icons/icon-192.png")} alt="" width={48} height={48} className="h-12 w-12 rounded-md" />
         <div>
           <div className="font-bold">Install the app</div>
           <div className="text-sm text-ink-muted">Add Green Basket to your home screen. No Play Store needed.</div>
@@ -77,7 +85,7 @@ function IOSSteps({ onClose }: { onClose: () => void }) {
       <div className="w-full max-w-sm rounded-4xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-lift" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-extrabold">Install on iPhone</h2>
-          <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-surface" aria-label="Close"><Icon name="x" size={18} /></button>
+          <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface" aria-label="Close"><Icon name="x" size={18} /></button>
         </div>
         <ol className="space-y-3 text-sm text-ink-soft">
           <li className="flex gap-3"><Step n={1} /> Open this page in <b>Safari</b>.</li>
@@ -92,7 +100,7 @@ function IOSSteps({ onClose }: { onClose: () => void }) {
 }
 
 const Step = ({ n }: { n: number }) => (
-  <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-light text-xs font-bold text-brand">{n}</span>
+  <span className="flex h-6 w-6 flex-none items-center justify-center rounded-md bg-brand-light text-xs font-bold text-brand">{n}</span>
 );
 
 const ShareIcon = () => (

@@ -15,36 +15,39 @@ export const PRODUCT_FIELDS =
   "id, category_id, name, name_local, description, image_url, unit, stock_qty, low_stock_threshold, is_active, sort_order, " +
   "product_variants(id, product_id, label, pack_qty, price, mrp, is_active, sort_order)";
 
+export const settingsQuery = {
+  queryKey: ["settings"],
+  queryFn: async () => must<Settings>(await supabase.from("settings").select("*").single()),
+  staleTime: 5 * 60_000,
+};
 export function useSettings() {
-  return useQuery({
-    queryKey: ["settings"],
-    queryFn: async () => must<Settings>(await supabase.from("settings").select("*").single()),
-    staleTime: 5 * 60_000,
-  });
+  return useQuery(settingsQuery);
 }
 
+export const categoriesQuery = {
+  queryKey: ["categories"],
+  queryFn: async () => must<Category[]>(await supabase.from("categories").select("*").eq("is_active", true).order("sort_order")),
+  staleTime: 10 * 60_000,
+};
 export function useCategories() {
-  return useQuery({
-    queryKey: ["categories"],
-    queryFn: async () => must<Category[]>(await supabase.from("categories").select("*").eq("is_active", true).order("sort_order")),
-    staleTime: 10 * 60_000,
-  });
+  return useQuery(categoriesQuery);
 }
 
+export const productsQuery = {
+  queryKey: ["products", "store"],
+  queryFn: async () => {
+    const rows = must<Product[]>(
+      await supabase.from("products").select(PRODUCT_FIELDS).eq("is_active", true).order("sort_order").order("name"),
+    );
+    return rows.map((p) => ({
+      ...p,
+      product_variants: p.product_variants.filter((v) => v.is_active).sort((a, b) => a.sort_order - b.sort_order),
+    })).filter((p) => p.product_variants.length > 0);
+  },
+  staleTime: 60_000,
+};
 export function useProducts() {
-  return useQuery({
-    queryKey: ["products", "store"],
-    queryFn: async () => {
-      const rows = must<Product[]>(
-        await supabase.from("products").select(PRODUCT_FIELDS).eq("is_active", true).order("sort_order").order("name"),
-      );
-      return rows.map((p) => ({
-        ...p,
-        product_variants: p.product_variants.filter((v) => v.is_active).sort((a, b) => a.sort_order - b.sort_order),
-      })).filter((p) => p.product_variants.length > 0);
-    },
-    staleTime: 60_000,
-  });
+  return useQuery(productsQuery);
 }
 
 export function useOpenSlots() {

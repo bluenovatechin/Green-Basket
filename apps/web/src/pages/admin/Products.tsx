@@ -75,7 +75,7 @@ export default function Products() {
           <button
             key={t.key}
             onClick={() => setFilter(t.key)}
-            className={`flex-none rounded-full px-4 py-2 text-sm font-semibold ring-1 ring-inset ${filter === t.key ? "bg-ink text-white ring-ink" : "bg-white text-ink-soft ring-line"}`}
+            className={`flex-none rounded-md px-4 py-2 text-sm font-semibold ring-1 ring-inset ${filter === t.key ? "bg-ink text-white ring-ink" : "bg-white text-ink-soft ring-line"}`}
           >
             {t.label} <span className="opacity-60">{t.n}</span>
           </button>
@@ -106,7 +106,7 @@ export default function Products() {
                     ) : (
                       <span className="truncate font-semibold">{p.name}</span>
                     )}
-                    {!p.is_active && <span className="flex-none rounded-full bg-line px-2 py-0.5 text-[11px] font-semibold text-ink-soft">Hidden</span>}
+                    {!p.is_active && <span className="flex-none rounded-md bg-line px-2 py-0.5 text-[11px] font-semibold text-ink-soft">Hidden</span>}
                   </div>
                   <div className="truncate text-xs text-ink-muted">{p.name_local}</div>
                   <div className="mt-0.5 truncate text-xs text-ink-soft">

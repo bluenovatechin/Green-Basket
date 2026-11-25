@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../auth/AuthProvider";
 import { friendlyError } from "../../lib/errors";
@@ -9,6 +9,7 @@ import { useCart } from "../../state/cart";
 import Icon from "../../components/Icon";
 import { Button, ErrorText, Field, inputClass } from "../../components/ui";
 import Turnstile, { turnstileEnabled } from "../../components/Turnstile";
+import { usePrivatePage } from "../../lib/seo";
 
 type Intent = "login" | "signup";
 type Step = "form" | "forgot" | "forgot-sent" | "confirm-email";
@@ -18,6 +19,7 @@ const MIN_PASSWORD = 8;
 // Email + password for everyone (customers and staff), plus one-tap Google.
 // Email is only needed for "Forgot password" (and for sign-up confirmation if that's switched on in Supabase).
 export default function Login() {
+  usePrivatePage("Log In or Create an Account");
   const { session } = useAuth();
   const { count } = useCart();
   const [params] = useSearchParams();
@@ -127,7 +129,7 @@ export default function Login() {
   return (
     <div className="mx-auto grid max-w-5xl overflow-hidden rounded-4xl bg-white shadow-soft ring-1 ring-line/60 md:grid-cols-2">
       <div className="relative hidden md:block">
-        <img src={heroImage()} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={heroImage()} alt="" width={960} height={1200} decoding="async" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-8 text-white">
           <p className="text-sm font-semibold text-brand-accent">Eat Fresh. Live Better.</p>
@@ -136,20 +138,20 @@ export default function Login() {
       </div>
 
       <div className="px-6 py-10 sm:px-12 sm:py-12">
-        <img src={asset("favicon.svg")} alt="" className="mb-6 h-12 w-12 rounded-2xl" />
+        <img src={asset("favicon.svg")} alt="" width={48} height={48} className="mb-6 h-12 w-12 rounded-md" />
 
         {step === "form" && (
-          <div className="mb-6 grid grid-cols-2 rounded-full bg-surface p-1 text-sm font-semibold" role="tablist" aria-label="Log in or create account">
+          <div className="mb-6 grid grid-cols-2 rounded-md bg-surface p-1 text-sm font-semibold" role="tablist" aria-label="Log in or create account">
             {(["login", "signup"] as const).map((i) => (
               <button key={i} role="tab" aria-selected={intent === i} onClick={() => switchIntent(i)}
-                className={`h-10 rounded-full transition ${intent === i ? "bg-white text-ink shadow-soft" : "text-ink-muted hover:text-ink"}`}>
+                className={`h-10 rounded-md transition ${intent === i ? "bg-white text-ink shadow-soft" : "text-ink-muted hover:text-ink"}`}>
                 {i === "login" ? "Log in" : "Create account"}
               </button>
             ))}
           </div>
         )}
 
-        <h1 className="text-3xl font-extrabold">{heading[0]}</h1>
+        <h1 className="display text-3xl">{heading[0]}</h1>
         <p className="mb-6 mt-1 text-ink-muted">{heading[1]}</p>
 
         {count > 0 && step === "form" && (
@@ -161,7 +163,7 @@ export default function Login() {
         {step === "form" && (
           <div className="space-y-4">
             <button onClick={google} disabled={busy !== null}
-              className="flex h-12 w-full items-center justify-center gap-3 rounded-full bg-white px-4 font-semibold text-ink ring-1 ring-inset ring-line transition hover:bg-surface disabled:opacity-60">
+              className="flex h-12 w-full items-center justify-center gap-3 rounded-md bg-white px-4 font-semibold text-ink ring-1 ring-inset ring-line transition hover:bg-surface disabled:opacity-60">
               <GoogleIcon />
               {busy === "google" ? "Opening Google…" : "Continue with Google"}
             </button>
@@ -190,7 +192,7 @@ export default function Login() {
                   <input id="pw" type={showPassword ? "text" : "password"} autoComplete={intent === "signup" ? "new-password" : "current-password"}
                     value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pr-16`}
                     placeholder={intent === "signup" ? `At least ${MIN_PASSWORD} characters` : "Your password"} />
-                  <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute inset-y-0 right-3 my-auto h-8 rounded-full px-2 text-xs font-semibold text-ink-muted hover:text-ink">
+                  <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute inset-y-0 right-3 my-auto h-8 rounded-md px-2 text-xs font-semibold text-ink-muted hover:text-ink">
                     {showPassword ? "Hide" : "Show"}
                   </button>
                 </div>
@@ -250,7 +252,7 @@ export default function Login() {
           </div>
         )}
 
-        <p className="mt-8 text-xs text-ink-muted">By continuing you agree to our terms and privacy policy.</p>
+        <p className="mt-8 text-xs leading-5 text-ink-muted">By continuing you agree to our <Link to="/terms" className="font-medium text-ink-soft underline underline-offset-2">Terms & Conditions</Link> and <Link to="/privacy" className="font-medium text-ink-soft underline underline-offset-2">Privacy Policy</Link>.</p>
       </div>
     </div>
   );

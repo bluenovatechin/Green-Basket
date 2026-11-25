@@ -8,9 +8,11 @@ import { friendlyError } from "../../lib/errors";
 import Icon from "../../components/Icon";
 import { Button, ErrorText, Field, inputClass } from "../../components/ui";
 import Turnstile, { turnstileEnabled } from "../../components/Turnstile";
+import { usePrivatePage } from "../../lib/seo";
 
 // Separate sign-in for the admin panel: email + password only, staff roles only.
 export default function AdminLogin() {
+  usePrivatePage("Staff Sign In");
   const { session, profile, loading } = useAuth();
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -58,7 +60,7 @@ export default function AdminLogin() {
     <div className="flex min-h-screen items-center justify-center bg-ink px-4 py-10">
       <div className="w-full max-w-sm rounded-4xl bg-white px-7 py-9 shadow-lift">
         <div className="mb-6 flex items-center gap-3">
-          <img src={asset("favicon.svg")} alt="" className="h-11 w-11 rounded-2xl" />
+          <img src={asset("favicon.svg")} alt="" width={44} height={44} className="h-11 w-11 rounded-md" />
           <div>
             <div className="font-extrabold">Green Basket</div>
             <div className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-ink-muted"><Icon name="shield" size={13} /> Admin console</div>
@@ -76,7 +78,7 @@ export default function AdminLogin() {
             <label htmlFor="admin-pw" className="mb-1.5 block text-sm font-medium text-ink-soft">Password</label>
             <div className="relative">
               <input id="admin-pw" type={show ? "text" : "password"} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pr-16`} />
-              <button type="button" onClick={() => setShow((v) => !v)} className="absolute inset-y-0 right-3 my-auto h-8 rounded-full px-2 text-xs font-semibold text-ink-muted hover:text-ink">{show ? "Hide" : "Show"}</button>
+              <button type="button" onClick={() => setShow((v) => !v)} className="absolute inset-y-0 right-3 my-auto h-8 rounded-md px-2 text-xs font-semibold text-ink-muted hover:text-ink">{show ? "Hide" : "Show"}</button>
             </div>
           </div>
           <Turnstile onToken={onToken} resetKey={captchaReset} />

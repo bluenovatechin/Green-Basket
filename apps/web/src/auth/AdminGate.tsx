@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import { useAuth } from "./AuthProvider";
 import { ADMIN_PATH } from "../lib/base";
@@ -38,4 +38,17 @@ export default function AdminGate({ children }: { children: ReactNode }) {
   if (!profile || profile.is_blocked || !isStaffAdmin(profile.role)) return <NotFound />;
   if (signInMethod(session) !== "password") return <Navigate to={`${ADMIN_PATH}/login?reauth=1&next=${here}`} replace />;
   return <>{children}</>;
+}
+
+/** Inside the console: pages only admins may open (money, customers, prices, settings, staff). */
+export function AdminOnly({ children }: { children: ReactNode }) {
+  const { profile } = useAuth();
+  if (profile?.role === "admin") return <>{children}</>;
+  return (
+    <div className="mx-auto max-w-md py-16 text-center">
+      <h1 className="display text-2xl">Admins only</h1>
+      <p className="mt-2 text-sm text-ink-soft">This page has money or customer details, so only store admins can open it.</p>
+      <Link to={ADMIN_PATH} className="mt-6 inline-flex h-11 items-center rounded-md bg-brand px-5 text-sm font-semibold text-white hover:bg-brand-dark">Back to dashboard</Link>
+    </div>
+  );
 }

@@ -5,15 +5,21 @@ import { FullPageSpinner } from "./components/ui";
 import { isConfigured } from "./lib/supabase";
 import CustomerLayout from "./components/CustomerLayout";
 import Home from "./pages/customer/Home";
-import Cart from "./pages/customer/Cart";
-import Login from "./pages/customer/Login";
-import ResetPassword from "./pages/customer/ResetPassword";
-import Checkout from "./pages/customer/Checkout";
-import Orders from "./pages/customer/Orders";
-import OrderDetail from "./pages/customer/OrderDetail";
-import Account from "./pages/customer/Account";
+// Shop pages people land on from search are in the main bundle; the rest load when first opened
+const Cart = lazy(() => import("./pages/customer/Cart"));
+const Login = lazy(() => import("./pages/customer/Login"));
+const ResetPassword = lazy(() => import("./pages/customer/ResetPassword"));
+const Checkout = lazy(() => import("./pages/customer/Checkout"));
+const Orders = lazy(() => import("./pages/customer/Orders"));
+const OrderDetail = lazy(() => import("./pages/customer/OrderDetail"));
+const Account = lazy(() => import("./pages/customer/Account"));
 import NotFound from "./pages/NotFound";
-import AdminGate from "./auth/AdminGate";
+import ProductPage from "./pages/customer/ProductPage";
+import CategoryPage from "./pages/customer/CategoryPage";
+
+const Privacy = lazy(() => import("./pages/legal/Privacy"));
+const Terms = lazy(() => import("./pages/legal/Terms"));
+import AdminGate, { AdminOnly } from "./auth/AdminGate";
 import { ADMIN_PATH } from "./lib/base";
 
 const ADMIN_SEGMENT = ADMIN_PATH.slice(1);
@@ -32,7 +38,10 @@ const AdminSlots = lazy(() => import("./pages/admin/Slots"));
 const AdminSettings = lazy(() => import("./pages/admin/Settings"));
 const AdminStaff = lazy(() => import("./pages/admin/Staff"));
 const AdminCustomers = lazy(() => import("./pages/admin/Customers"));
+const RiderLayout = lazy(() => import("./pages/rider/RiderLayout"));
 const RiderHome = lazy(() => import("./pages/rider/RiderHome"));
+const RiderDone = lazy(() => import("./pages/rider/RiderDone"));
+const RiderOrder = lazy(() => import("./pages/rider/RiderOrder"));
 
 export default function App() {
   if (!isConfigured) {
@@ -56,6 +65,12 @@ export default function App() {
           <Route path="orders" element={<RequireAuth><Orders /></RequireAuth>} />
           <Route path="orders/:id" element={<RequireAuth><OrderDetail /></RequireAuth>} />
           <Route path="account" element={<RequireAuth><Account /></RequireAuth>} />
+          <Route path="p/:slug" element={<ProductPage />} />
+          <Route path="c/:slug" element={<CategoryPage />} />
+          <Route path="privacy" element={<Privacy />} />
+          <Route path="terms" element={<Terms />} />
+          {/* unknown addresses get the branded 404 inside the normal header and footer */}
+          <Route path="*" element={<NotFound />} />
         </Route>
 
         {/* Admin panel lives at a private address (ADMIN_PATH, e.g. /gb-console), with its own password-only login.
@@ -67,16 +82,21 @@ export default function App() {
           <Route path="orders/:id" element={<AdminOrderDetail />} />
           <Route path="procurement" element={<AdminProcurement />} />
           <Route path="products" element={<AdminProducts />} />
-          <Route path="products/:id" element={<AdminProductEdit />} />
-          <Route path="prices" element={<AdminPrices />} />
-          <Route path="slots" element={<AdminSlots />} />
-          <Route path="settings" element={<AdminSettings />} />
-          <Route path="staff" element={<AdminStaff />} />
-          <Route path="customers" element={<AdminCustomers />} />
+          {/* admin-only pages: packers get an "Admins only" message (the database refuses them anyway) */}
+          <Route path="products/:id" element={<AdminOnly><AdminProductEdit /></AdminOnly>} />
+          <Route path="prices" element={<AdminOnly><AdminPrices /></AdminOnly>} />
+          <Route path="slots" element={<AdminOnly><AdminSlots /></AdminOnly>} />
+          <Route path="settings" element={<AdminOnly><AdminSettings /></AdminOnly>} />
+          <Route path="staff" element={<AdminOnly><AdminStaff /></AdminOnly>} />
+          <Route path="customers" element={<AdminOnly><AdminCustomers /></AdminOnly>} />
         </Route>
 
-        <Route path="rider" element={<RequireAuth roles={["rider", "admin"]}><RiderHome /></RequireAuth>} />
-        <Route path="*" element={<NotFound />} />
+        {/* Rider app: its own header, tabs (Deliveries / Completed / Account) and back buttons */}
+        <Route path="rider" element={<RequireAuth roles={["rider", "admin"]}><RiderLayout /></RequireAuth>}>
+          <Route index element={<RiderHome />} />
+          <Route path="done" element={<RiderDone />} />
+          <Route path=":id" element={<RiderOrder />} />
+        </Route>
       </Routes>
     </Suspense>
   );

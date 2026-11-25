@@ -1,114 +1,95 @@
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { rpc, useLiveOrders } from "../../lib/api";
-import { supabase } from "../../lib/supabase";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
-import { rupees, slotLabel, todayIST } from "../../lib/format";
-import { friendlyError } from "../../lib/errors";
-import type { Order } from "../../lib/types";
+import { rupees, time12 } from "../../lib/format";
 import Icon from "../../components/Icon";
-import { Button, Card, Empty, ErrorText, FullPageSpinner, StatusBadge } from "../../components/ui";
-import { ADMIN_PATH, BASE } from "../../lib/base";
+import { Empty, ErrorText, FullPageSpinner, StatusBadge } from "../../components/ui";
+import { friendlyError } from "../../lib/errors";
+import { useRiderOrders, type RiderOrder } from "./RiderLayout";
 
-// Simple phone screen for riders: today's assigned orders, call / map, start and complete delivery.
-// Subscribes to live order updates so newly assigned deliveries appear instantly.
+// Rider's main screen: deliveries grouped by what to do next. Tap one to open it.
 export default function RiderHome() {
-  const { profile, signOut } = useAuth();
-  const qc = useQueryClient();
-  const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  const { profile } = useAuth();
+  const orders = useRiderOrders("active");
 
-  // Live real-time push whenever orders assigned to this rider change
-  useLiveOrders(profile?.id ? `rider_id=eq.${profile.id}` : null, [["rider", "orders"]]);
-
-  const orders = useQuery({
-    queryKey: ["rider", "orders"],
-    refetchInterval: 30_000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*, delivery_slots!inner(slot_date, start_time, end_time), order_items(id, product_name, variant_label, quantity, is_unavailable)")
-        .eq("rider_id", profile!.id)
-        .in("status", ["packed", "out_for_delivery", "confirmed", "placed"])
-        .gte("delivery_slots.slot_date", todayIST(-1))
-        .order("created_at");
-      if (error) throw error;
-      return data as unknown as Order[];
-    },
-  });
-
-  async function act(key: string, fn: () => Promise<unknown>) {
-    setError("");
-    setBusy(key);
-    try {
-      await fn();
-      await qc.invalidateQueries({ queryKey: ["rider"] });
-    } catch (e) {
-      setError(friendlyError(e));
-    } finally {
-      setBusy(null);
-    }
-  }
+  if (orders.isLoading) return <FullPageSpinner />;
+  const list = orders.data ?? [];
+  const groups: { title: string; hint: string; items: RiderOrder[] }[] = [
+    { title: "On the way", hint: "Mark these delivered at the door", items: list.filter((o) => o.status === "out_for_delivery") },
+    { title: "Ready to pick up", hint: "Packed and waiting at the store", items: list.filter((o) => o.status === "packed") },
+    { title: "Being packed", hint: "Not ready yet", items: list.filter((o) => o.status === "placed" || o.status === "confirmed") },
+  ];
 
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-surface">
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-brand px-4 py-3 text-white">
-        <span className="font-bold">My deliveries</span>
-        <span className="space-x-3 text-sm">
-          {profile?.role === "admin" && <a href={BASE + ADMIN_PATH.slice(1)} target="_blank" rel="noreferrer" className="underline">Admin ↗</a>}
-          <button onClick={signOut} className="underline">Log out</button>
-        </span>
-      </header>
-      <main className="space-y-3 p-4">
-        <ErrorText>{error}</ErrorText>
-        {orders.isLoading ? <FullPageSpinner /> : !orders.data?.length ? <Empty title="No deliveries assigned">New orders appear here automatically.</Empty> : (
-          orders.data.map((o) => {
-            const a = o.address;
-            const mapQuery = encodeURIComponent(`${a.line1} ${a.line2 ?? ""} ${a.landmark ?? ""} ${a.city} ${a.pincode}`);
-            const collect = o.payment_method === "cod" && o.payment_status !== "paid";
-            return (
-              <Card key={o.id} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <b>{o.order_number}</b>
-                  <StatusBadge status={o.status} />
-                </div>
-                <div className="text-sm text-ink-soft">{slotLabel(o.delivery_slots)}</div>
-                <div className="text-sm">
-                  <b>{a.full_name}</b><br />
-                  {a.line1}{a.line2 ? `, ${a.line2}` : ""}{a.landmark ? `, near ${a.landmark}` : ""}, {a.pincode}
-                </div>
-                {o.customer_note && <div className="rounded-lg bg-amber-50 p-2 text-sm">Note: {o.customer_note}</div>}
-                <div className={`rounded-lg p-2 text-center font-bold ${collect ? "bg-amber-100 text-amber-900" : "bg-green-100 text-green-800"}`}>
-                  {collect ? `Collect ${rupees(o.total)}` : "Already paid"}
-                </div>
-                <details className="text-sm">
-                  <summary className="cursor-pointer text-ink-soft">{o.order_items?.filter((i) => !i.is_unavailable).length} items</summary>
-                  <ul className="mt-1 list-inside list-disc">
-                    {o.order_items?.filter((i) => !i.is_unavailable).map((i) => <li key={i.id}>{i.product_name} {i.variant_label} × {i.quantity}</li>)}
-                  </ul>
-                </details>
-                <div className="grid grid-cols-2 gap-2">
-                  <a href={`tel:${a.phone}`} className="rounded-full bg-white ring-1 ring-inset ring-line py-2.5 text-center font-semibold"><Icon name="phone" size={18} className="mr-2" />Call</a>
-                  <a href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`} target="_blank" rel="noreferrer" className="rounded-full bg-white ring-1 ring-inset ring-line py-2.5 text-center font-semibold"><Icon name="pin" size={18} className="mr-2" />Map</a>
-                </div>
-                {o.status === "packed" && (
-                  <Button className="w-full" loading={busy === o.id} onClick={() => act(o.id, () => rpc("set_order_status", { p_order_id: o.id, p_status: "out_for_delivery", p_note: null }))}>
-                    Start delivery
-                  </Button>
-                )}
-                {o.status === "out_for_delivery" && (collect ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button loading={busy === o.id + "c"} onClick={() => act(o.id + "c", () => rpc("complete_delivery", { p_order_id: o.id, p_collected_via: "cash" }))}>Delivered · Cash</Button>
-                    <Button loading={busy === o.id + "u"} onClick={() => act(o.id + "u", () => rpc("complete_delivery", { p_order_id: o.id, p_collected_via: "upi_qr" }))}>Delivered · UPI</Button>
-                  </div>
-                ) : (
-                  <Button className="w-full" loading={busy === o.id + "d"} onClick={() => act(o.id + "d", () => rpc("complete_delivery", { p_order_id: o.id, p_collected_via: null }))}>Delivered</Button>
-                ))}
-              </Card>
-            );
-          })
-        )}
-      </main>
+    <div className="space-y-6">
+      <div>
+        <h1 className="display text-2xl">Hi{profile?.full_name ? ` ${profile.full_name.split(" ")[0]}` : ""}, your deliveries</h1>
+        <p className="mt-1 text-sm text-ink-muted">
+          {list.length ? `${list.length} assigned to you · refreshes automatically` : "New deliveries appear here automatically."}
+        </p>
+      </div>
+
+      {orders.error && <ErrorText>{friendlyError(orders.error)}</ErrorText>}
+
+      {list.length === 0 ? (
+        <div className="rounded-2xl bg-paper shadow-soft ring-1 ring-line/70">
+          <Empty title="No deliveries right now" icon="bike">
+            When the store assigns you an order it shows up here. <Link to="/rider/done" className="font-semibold text-brand underline">See completed deliveries</Link>
+          </Empty>
+        </div>
+      ) : (
+        groups.filter((g) => g.items.length).map((g) => (
+          <section key={g.title} aria-labelledby={`g-${g.title}`}>
+            <div className="mb-2 flex items-baseline justify-between">
+              <h2 id={`g-${g.title}`} className="text-base font-bold">{g.title} <span className="text-ink-muted">({g.items.length})</span></h2>
+              <span className="text-xs text-ink-muted">{g.hint}</span>
+            </div>
+            <ul className="space-y-3">
+              {g.items.map((o) => <li key={o.id}><DeliveryRow o={o} /></li>)}
+            </ul>
+          </section>
+        ))
+      )}
     </div>
   );
 }
+
+export function DeliveryRow({ o, done = false }: { o: RiderOrder; done?: boolean }) {
+  const a = o.address;
+  return (
+    <Link to={`/rider/${o.id}`} className="block rounded-2xl bg-paper p-4 shadow-soft ring-1 ring-line/70 transition hover:shadow-lift active:bg-surface">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-bold">{o.order_number}</span>
+        <StatusBadge status={o.status} />
+      </div>
+      <div className="mt-2 flex items-start gap-2 text-sm">
+        <Icon name="pin" size={16} className="mt-0.5 flex-none text-brand" />
+        <span className="min-w-0">
+          <span className="block font-semibold">{a.full_name}</span>
+          <span className="block truncate text-ink-soft">{a.line1}{a.line2 ? `, ${a.line2}` : ""}{a.landmark ? `, near ${a.landmark}` : ""}</span>
+        </span>
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3 text-sm">
+        <span className="flex items-center gap-1.5 text-ink-soft">
+          <Icon name="clock" size={15} />
+          {done && o.delivered_at
+            ? `Delivered ${new Date(o.delivered_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`
+            : `${time12(o.delivery_slots.start_time)}–${time12(o.delivery_slots.end_time)}`}
+        </span>
+        <CollectPill o={o} />
+      </div>
+    </Link>
+  );
+}
+
+/** The only money a rider ever sees: the exact amount to collect on an unpaid cash-on-delivery order. */
+export function CollectPill({ o, large = false }: { o: RiderOrder; large?: boolean }) {
+  const size = large ? "px-4 py-3 text-base" : "px-2.5 py-1 text-xs";
+  if (o.status === "delivered") {
+    return <span className={`rounded-md bg-surface font-semibold text-ink-soft ${size}`}>{o.cod_collected_via === "upi_qr" ? "Collected by UPI" : o.cod_collected_via === "cash" ? "Collected in cash" : "Prepaid"}</span>;
+  }
+  if (o.collect_amount !== null && o.collect_amount !== undefined) {
+    return <span className={`rounded-md bg-amber-100 font-bold text-amber-900 ${size}`}>Collect {rupees(o.collect_amount)}</span>;
+  }
+  return <span className={`rounded-md bg-brand-light font-semibold text-brand ${size}`}>Paid · nothing to collect</span>;
+}
+

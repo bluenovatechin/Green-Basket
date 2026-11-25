@@ -5,6 +5,7 @@ import { rupees } from "../../lib/format";
 import { ProductImage, QtyStepper } from "../../components/ProductCard";
 import Icon from "../../components/Icon";
 import { Button, Card, Empty } from "../../components/ui";
+import { usePrivatePage } from "../../lib/seo";
 
 export function useBill(subtotal: number) {
   const { data: s } = useSettings();
@@ -19,13 +20,14 @@ export function useBill(subtotal: number) {
 }
 
 export default function Cart() {
+  usePrivatePage("Your Basket");
   const cart = useCart();
   const bill = useBill(cart.subtotal);
   const navigate = useNavigate();
 
   if (cart.lines.length === 0) {
     return (
-      <Empty title="Your basket is empty" icon="bag">
+      <Empty title="Your basket is empty" icon="bag" heading="h1">
         <p className="mb-5">Fresh vegetables and fruits are waiting for you.</p>
         <Link to="/"><Button>Start shopping</Button></Link>
       </Empty>
@@ -39,7 +41,7 @@ export default function Cart() {
       <div className="space-y-4">
         <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold">Your basket</h1>
+            <h1 className="display text-3xl">Your basket</h1>
             <p className="text-sm text-ink-muted">{cart.count} item{cart.count === 1 ? "" : "s"}</p>
           </div>
           <Link to="/" className="text-sm font-semibold text-brand">+ Add more</Link>

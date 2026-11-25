@@ -3,13 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import OrderTracker from "../../components/OrderTracker";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { rpc, useOrder } from "../../lib/api";
-import { supabase } from "../../lib/supabase";
 import { dateTime, qty, rupees, slotLabel, STATUS_LABEL } from "../../lib/format";
 import { friendlyError } from "../../lib/errors";
-import type { OrderStatus, Profile } from "../../lib/types";
+import type { Order, OrderStatus } from "../../lib/types";
 import { Button, Card, ErrorText, FullPageSpinner, inputClass, StatusBadge } from "../../components/ui";
 import { useIsAdmin } from "./AdminLayout";
 import { ADMIN_PATH } from "../../lib/base";
+import Icon from "../../components/Icon";
 
 const NEXT: Partial<Record<OrderStatus, { to: OrderStatus; label: string }[]>> = {
   placed: [{ to: "confirmed", label: "Confirm" }, { to: "packed", label: "Mark packed" }],
@@ -20,8 +20,16 @@ const NEXT: Partial<Record<OrderStatus, { to: OrderStatus; label: string }[]>> =
 
 export default function AdminOrderDetail() {
   const { id } = useParams();
-  const order = useOrder(id);
   const isAdmin = useIsAdmin();
+  // Admins read the full order (with money). Packers get a money-free copy from the database (migration 0011).
+  const full = useOrder(isAdmin ? id : undefined);
+  const lite = useQuery({
+    queryKey: ["staff-order", id],
+    enabled: !isAdmin && Boolean(id),
+    refetchInterval: 15_000,
+    queryFn: () => rpc<Order>("staff_order", { p_order_id: id }),
+  });
+  const order = isAdmin ? full : lite;
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [busy, setBusy] = useState<string | null>(null);
@@ -30,12 +38,11 @@ export default function AdminOrderDetail() {
   const riders = useQuery({
     queryKey: ["admin", "riders"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id, full_name, email, role").eq("role", "rider").eq("is_blocked", false);
-      if (error) throw error;
-      return data as Profile[];
+      return rpc<{ id: string; name: string }[]>("staff_riders", {});
     },
   });
 
+  if (order.error) return <Card><ErrorText>{friendlyError(order.error)}</ErrorText></Card>;
   if (order.isLoading || !order.data) return <FullPageSpinner />;
   const o = order.data;
 
@@ -45,6 +52,7 @@ export default function AdminOrderDetail() {
     try {
       await fn();
       await qc.invalidateQueries({ queryKey: ["order", o.id] });
+      await qc.invalidateQueries({ queryKey: ["staff-order", o.id] });
       qc.invalidateQueries({ queryKey: ["admin"] });
     } catch (e) {
       setError(friendlyError(e));
@@ -58,7 +66,7 @@ export default function AdminOrderDetail() {
   return (
     <div className="space-y-4">
       <div className="no-print flex flex-wrap items-center justify-between gap-2">
-        <button onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(`${ADMIN_PATH}/orders`))} className="text-sm font-medium text-ink-soft">← Back to orders</button>
+        <button onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(`${ADMIN_PATH}/orders`))} className="inline-flex h-10 items-center gap-1.5 rounded-md px-2 text-sm font-semibold text-ink-soft hover:bg-paper hover:text-ink"><Icon name="chevronLeft" size={18} /> Back to orders</button>
         <Button variant="secondary" onClick={() => window.print()}>Print packing slip</Button>
       </div>
 
@@ -76,16 +84,21 @@ export default function AdminOrderDetail() {
               {o.address.line1}{o.address.line2 ? `, ${o.address.line2}` : ""}{o.address.landmark ? `, near ${o.address.landmark}` : ""}, {o.address.city} {o.address.pincode}
             </p>
             {o.customer_note && <p className="mt-1 rounded-lg bg-amber-50 p-2 text-sm">Note: {o.customer_note}</p>}
-            <p className="mt-1 text-sm"><b>Payment:</b> {o.payment_method === "cod" ? `Collect ${rupees(o.total)} (cash/UPI)` : "Paid online"} · {o.payment_status}</p>
+            <p className="mt-1 text-sm">
+              <b>Payment:</b>{" "}
+              {isAdmin
+                ? <>{o.payment_method === "cod" ? `Collect ${rupees(o.total)} (cash/UPI)` : "Paid online"} · {o.payment_status}</>
+                : o.payment_method === "cod" ? "Pay on delivery (rider collects)" : "Paid online"}
+            </p>
 
             <div className="-mx-1 mt-3 overflow-x-auto px-1"><table className="w-full min-w-[320px] text-sm">
-              <thead className="text-left text-ink-muted"><tr><th className="py-1">Item</th><th>Qty</th><th className="text-right">Amount</th><th className="no-print" /></tr></thead>
+              <thead className="text-left text-ink-muted"><tr><th className="py-1">Item</th><th>Qty</th>{isAdmin && <th className="text-right">Amount</th>}<th className="no-print" /></tr></thead>
               <tbody className="divide-y divide-line">
                 {o.order_items?.map((i) => (
                   <tr key={i.id} className={i.is_unavailable ? "text-ink-muted line-through" : ""}>
                     <td className="py-2">{i.product_name} · {i.variant_label}</td>
                     <td>{i.quantity} <span className="text-xs text-ink-muted">({qty(i.unit, i.pack_qty * i.quantity)})</span></td>
-                    <td className="text-right">{rupees(i.line_total)}</td>
+                    {isAdmin && <td className="text-right">{rupees(i.line_total)}</td>}
                     <td className="no-print pl-2 text-right">
                       {editable && !i.is_unavailable && (
                         <button className="text-xs text-red-600" disabled={busy !== null}
@@ -99,10 +112,10 @@ export default function AdminOrderDetail() {
                 ))}
               </tbody>
             </table></div>
-            <div className="mt-2 text-right text-sm">
+            {isAdmin && <div className="mt-2 text-right text-sm">
               Items {rupees(o.subtotal)} · Delivery {rupees(o.delivery_fee)} · <b>Total {rupees(o.total)}</b>
               {Number(o.refunded_amount) > 0 && <div className="text-sky-700">Refunded/refunding {rupees(o.refunded_amount)}</div>}
-            </div>
+            </div>}
           </Card>
         </div>
 
@@ -134,7 +147,7 @@ export default function AdminOrderDetail() {
                 <select className={inputClass} value={o.rider_id ?? ""} disabled={busy !== null}
                   onChange={(e) => run("rider", () => rpc("assign_rider", { p_order_id: o.id, p_rider_id: e.target.value || null }))}>
                   <option value="">Not assigned</option>
-                  {riders.data?.map((r) => <option key={r.id} value={r.id}>{r.full_name || r.email}</option>)}
+                  {riders.data?.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               </label>
             )}
@@ -160,7 +173,7 @@ export default function AdminOrderDetail() {
             </ul>
           </Card>
 
-          {!!o.refunds?.length && (
+          {isAdmin && !!o.refunds?.length && (
             <Card>
               <h2 className="mb-2 font-semibold">Refunds</h2>
               <ul className="space-y-1 text-sm">

@@ -10,10 +10,12 @@ import type { PaymentMethod } from "../../lib/types";
 import AddressForm from "../../components/AddressForm";
 import { Button, Card, Empty, ErrorText, FullPageSpinner, inputClass } from "../../components/ui";
 import { Row, useBill } from "./Cart";
+import { usePrivatePage } from "../../lib/seo";
 
 interface PlacedOrder { order_id: string; status: string; total: number }
 
 export default function Checkout() {
+  usePrivatePage("Checkout");
   const cart = useCart();
   const bill = useBill(cart.subtotal);
   const addresses = useAddresses();
@@ -111,7 +113,7 @@ export default function Checkout() {
   return (
     <div className="mx-auto max-w-xl space-y-4 pb-24">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Checkout</h1>
+        <h1 className="display text-3xl">Checkout</h1>
         <Link to="/cart" className="text-sm font-medium text-ink-soft">← Basket</Link>
       </div>
 
@@ -211,7 +213,7 @@ export default function Checkout() {
 function StepHeader({ n, title, done }: { n: number; title: string; done: boolean }) {
   return (
     <h2 className="mb-3 flex items-center gap-2 font-semibold">
-      <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${done ? "bg-brand text-white" : "bg-line text-ink-soft"}`}>
+      <span className={`flex h-6 w-6 items-center justify-center rounded-md text-xs font-bold ${done ? "bg-brand text-white" : "bg-line text-ink-soft"}`}>
         {done ? "✓" : n}
       </span>
       {title}

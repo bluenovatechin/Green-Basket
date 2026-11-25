@@ -10,8 +10,10 @@ import { Button, Card, Empty, ErrorText, FullPageSpinner } from "../../component
 import OrderTracker from "../../components/OrderTracker";
 import Icon from "../../components/Icon";
 import { Row } from "./Cart";
+import { usePrivatePage } from "../../lib/seo";
 
 export default function OrderDetail() {
+  usePrivatePage("Order Details");
   const { id } = useParams();
   const [params, setParams] = useSearchParams();
   const returning = params.get("payment") === "return";
@@ -114,8 +116,8 @@ export default function OrderDetail() {
 
       {justPlaced && o.status !== "pending_payment" && (
         <div className="rounded-2xl bg-gradient-to-br from-brand to-brand-dark p-5 text-center text-white">
-          <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-white text-3xl text-brand">✓</div>
-          <h1 className="text-xl font-bold">Order placed!</h1>
+          <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-md bg-white text-3xl text-brand">✓</div>
+          <h1 className="display text-3xl">Order placed!</h1>
           <p className="text-sm text-white/90">Order {o.order_number} · {rupees(o.total)}</p>
           <p className="mt-1 text-sm text-white/90">Delivery {slotLabel(o.delivery_slots)}</p>
         </div>
@@ -123,7 +125,7 @@ export default function OrderDetail() {
 
       {!justPlaced && (
         <div className="flex items-baseline justify-between">
-          <h1 className="text-xl font-bold">Order {o.order_number}</h1>
+          <h1 className="display text-3xl">Order {o.order_number}</h1>
           <span className="text-sm text-ink-muted">{dateTime(o.created_at)}</span>
         </div>
       )}
@@ -170,7 +172,7 @@ export default function OrderDetail() {
             {o.payment_status === "paid" ? "✓ Paid" : o.payment_method === "cod" ? `Pay ${rupees(o.total)} to the rider` : o.payment_status === "failed" ? "Not paid" : "Waiting for payment"}
           </div>
           {canPayOnlineNow && (
-            <button onClick={pay} disabled={busy} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-light px-3 py-1.5 text-xs font-semibold text-brand hover:bg-brand hover:text-white disabled:opacity-50">
+            <button onClick={pay} disabled={busy} className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-brand-light px-3 py-1.5 text-xs font-semibold text-brand hover:bg-brand hover:text-white disabled:opacity-50">
               <Icon name="wallet" size={14} /> Pay online now instead
             </button>
           )}
@@ -228,9 +230,9 @@ export default function OrderDetail() {
       <div className="grid gap-2 sm:grid-cols-2">
         <Button onClick={() => navigate("/")}>Continue shopping</Button>
         {support ? (
-          <a href={`tel:${support}`} className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-white ring-1 ring-inset ring-line font-semibold"><Icon name="phone" size={18} className="mr-2" />Call support</a>
+          <a href={`tel:${support}`} className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-white ring-1 ring-inset ring-line font-semibold"><Icon name="phone" size={18} className="mr-2" />Call support</a>
         ) : (
-          <a href={`mailto:${settings.data?.support_email ?? ""}`} className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-white ring-1 ring-inset ring-line font-semibold">Need help?</a>
+          <a href={`mailto:${settings.data?.support_email ?? ""}`} className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-white ring-1 ring-inset ring-line font-semibold">Need help?</a>
         )}
       </div>
       {canCancel && (

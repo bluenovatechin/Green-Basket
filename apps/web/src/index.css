@@ -1,15 +1,59 @@
+/* Self-hosted variable font (latin), preloaded in index.html. No third-party font requests. */
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/fonts/jakarta-latin.woff2") format("woff2");
+}
+/* Metric-matched fallback: if the font arrives late, text doesn't jump. */
+@font-face {
+  font-family: "Jakarta Fallback";
+  src: local("Arial"), local("Roboto");
+  size-adjust: 104%;
+  ascent-override: 98%;
+  descent-override: 21%;
+  line-gap-override: 0%;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  html { -webkit-tap-highlight-color: transparent; }
+  html { -webkit-tap-highlight-color: transparent; text-size-adjust: 100%; }
   body {
     @apply bg-surface text-ink antialiased;
-    font-feature-settings: "ss01", "cv11";
   }
-  h1, h2, h3 { @apply tracking-tight text-ink; }
+  h1, h2, h3 { @apply text-ink; letter-spacing: -0.015em; }
   ::selection { @apply bg-brand/15; }
+
+  /* Visible focus for keyboard users on every interactive element (mouse clicks don't show it). */
+  :focus-visible {
+    outline: 2px solid theme("colors.brand.DEFAULT");
+    outline-offset: 2px;
+  }
+  input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  }
+}
+
+@layer components {
+  /* Serif display face for page titles and section headings */
+  .display { font-weight: 800; letter-spacing: -0.025em; }
+  /* Small uppercase label above headings */
+  .eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted; }
+  /* Readable long-form text (legal pages) */
+  .prose-gb { @apply max-w-[68ch] text-[15px] leading-7 text-ink-soft; }
+  .prose-gb h2 { @apply mt-10 scroll-mt-24 text-xl font-semibold text-ink; }
+  .prose-gb h3 { @apply mt-6 text-base font-semibold text-ink; }
+  .prose-gb p, .prose-gb ul, .prose-gb ol { @apply mt-3; }
+  .prose-gb ul { @apply list-disc space-y-1.5 pl-5; }
+  .prose-gb ol { @apply list-decimal space-y-1.5 pl-5; }
+  .prose-gb a { @apply font-medium text-brand underline underline-offset-2; }
+  .prose-gb strong { @apply font-semibold text-ink; }
 }
 
 @layer utilities {
