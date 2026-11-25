@@ -7,6 +7,7 @@ import { friendlyError } from "../../lib/errors";
 import { shrinkImage } from "../../lib/image";
 import type { Product, StockUnit } from "../../lib/types";
 import { Button, Card, ErrorText, Field, FullPageSpinner, inputClass } from "../../components/ui";
+import { ADMIN_PATH } from "../../lib/base";
 
 interface VariantDraft { id?: string; label: string; pack_qty: string; price: string; mrp: string; is_active: boolean; sort_order: number }
 
@@ -110,7 +111,7 @@ export default function ProductEdit() {
       }
       await qc.invalidateQueries({ queryKey: ["admin"] });
       qc.invalidateQueries({ queryKey: ["products"] });
-      navigate("/admin/products");
+      navigate(`${ADMIN_PATH}/products`);
     } catch (e) {
       setError(friendlyError(e));
     } finally {
@@ -179,7 +180,7 @@ export default function ProductEdit() {
 
       <ErrorText>{error}</ErrorText>
       <div className="flex gap-2">
-        <Button variant="secondary" onClick={() => navigate("/admin/products")}>Cancel</Button>
+        <Button variant="secondary" onClick={() => navigate(`${ADMIN_PATH}/products`)}>Cancel</Button>
         <Button className="flex-1" loading={busy} onClick={save}>Save product</Button>
       </div>
     </div>

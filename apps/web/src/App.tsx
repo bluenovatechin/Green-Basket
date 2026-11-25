@@ -7,14 +7,20 @@ import CustomerLayout from "./components/CustomerLayout";
 import Home from "./pages/customer/Home";
 import Cart from "./pages/customer/Cart";
 import Login from "./pages/customer/Login";
+import ResetPassword from "./pages/customer/ResetPassword";
 import Checkout from "./pages/customer/Checkout";
 import Orders from "./pages/customer/Orders";
 import OrderDetail from "./pages/customer/OrderDetail";
 import Account from "./pages/customer/Account";
 import NotFound from "./pages/NotFound";
+import AdminGate from "./auth/AdminGate";
+import { ADMIN_PATH } from "./lib/base";
+
+const ADMIN_SEGMENT = ADMIN_PATH.slice(1);
 
 // Staff screens are loaded only when needed, so customers never download them
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const AdminOrders = lazy(() => import("./pages/admin/Orders"));
 const AdminOrderDetail = lazy(() => import("./pages/admin/OrderDetail"));
@@ -45,13 +51,17 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="cart" element={<Cart />} />
           <Route path="login" element={<Login />} />
+          <Route path="reset-password" element={<ResetPassword />} />
           <Route path="checkout" element={<RequireAuth><Checkout /></RequireAuth>} />
           <Route path="orders" element={<RequireAuth><Orders /></RequireAuth>} />
           <Route path="orders/:id" element={<RequireAuth><OrderDetail /></RequireAuth>} />
           <Route path="account" element={<RequireAuth><Account /></RequireAuth>} />
         </Route>
 
-        <Route path="admin" element={<RequireAuth roles={["admin", "packer"]}><AdminLayout /></RequireAuth>}>
+        {/* Admin panel lives at a private address (ADMIN_PATH, e.g. /gb-console), with its own password-only login.
+            The old /admin address is just "Page not found". */}
+        <Route path={`${ADMIN_SEGMENT}/login`} element={<AdminLogin />} />
+        <Route path={ADMIN_SEGMENT} element={<AdminGate><AdminLayout /></AdminGate>}>
           <Route index element={<AdminDashboard />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="orders/:id" element={<AdminOrderDetail />} />

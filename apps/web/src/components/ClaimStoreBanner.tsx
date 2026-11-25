@@ -6,6 +6,7 @@ import { rpc } from "../lib/api";
 import { friendlyError } from "../lib/errors";
 import { Button } from "./ui";
 import Icon from "./Icon";
+import { ADMIN_PATH } from "../lib/base";
 
 /** Shown only on a brand-new installation that has no admin yet: the logged-in person can claim it. */
 export default function ClaimStoreBanner() {
@@ -31,7 +32,7 @@ export default function ClaimStoreBanner() {
       await rpc("claim_store_ownership", {});
       await refreshProfile();
       await qc.invalidateQueries({ queryKey: ["store-has-admin"] });
-      navigate("/admin");
+      navigate(`${ADMIN_PATH}`);
     } catch (e) {
       setError(friendlyError(e));
       qc.invalidateQueries({ queryKey: ["store-has-admin"] });

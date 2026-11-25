@@ -35,13 +35,20 @@ const MESSAGES: Record<string, string> = {
 
 export function friendlyError(e: unknown): string {
   if (!e) return "";
-  const err = e as { message?: string; details?: string | null };
+  const err = e as { message?: string; details?: string | null; status?: number; name?: string };
   const code = (err.message ?? String(e)).trim();
   const base = MESSAGES[code];
   if (!base) {
+    // Supabase Auth couldn't reach the email server (bad SMTP settings) or timed out: it returns an empty "{}"
+    if (code === "{}" || code === "" || err.status === 504 || err.name === "AuthRetryableFetchError") {
+      return "We couldn't send the email right now. Please try again in a few minutes, or continue with Google.";
+    }
+    if (/error sending|sending (confirmation|recovery|magic)/i.test(code)) return "We couldn't send the email right now. Please try again later.";
     if (/Failed to fetch|NetworkError/i.test(code)) return "No internet connection. Please try again.";
+    if (/email rate limit/i.test(code)) return "Too many emails sent. Please wait a little and try again.";
     if (/rate limit|too many requests/i.test(code)) return "Too many attempts. Please wait a minute and try again.";
-    if (/invalid.*(otp|token)|expired/i.test(code)) return "That code is wrong or has expired.";
+    if (/password should be at least|weak password/i.test(code)) return "Please choose a longer, stronger password (at least 8 characters).";
+    if (/invalid.*(otp|token)|expired/i.test(code)) return "That link or code is wrong or has expired.";
     return code || "Something went wrong. Please try again.";
   }
   return err.details ? `${base}${/[₹]$/.test(base) ? "" : ": "}${err.details}` : base;

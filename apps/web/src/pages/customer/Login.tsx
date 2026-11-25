@@ -1,123 +1,128 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../auth/AuthProvider";
 import { friendlyError } from "../../lib/errors";
 import { appUrl, asset } from "../../lib/base";
 import { heroImage } from "../../lib/images";
+import { useCart } from "../../state/cart";
 import Icon from "../../components/Icon";
 import { Button, ErrorText, Field, inputClass } from "../../components/ui";
 import Turnstile, { turnstileEnabled } from "../../components/Turnstile";
 
 type Intent = "login" | "signup";
-type Step = "email" | "code" | "password";
+type Step = "form" | "forgot" | "forgot-sent" | "confirm-email";
 
-// Ways in:
-//  - Continue with Google: one tap, works for new and existing customers
-//  - Email + one-time code: "Log in" (existing accounts only) or "Create account" (asks for a name)
-//  - Email + password: staff accounts created by the admin
+const MIN_PASSWORD = 8;
+
+// Email + password for everyone (customers and staff), plus one-tap Google.
+// Email is only needed for "Forgot password" (and for sign-up confirmation if that's switched on in Supabase).
 export default function Login() {
   const { session } = useAuth();
+  const { count } = useCart();
   const [params] = useSearchParams();
   const next = params.get("next") || "/";
   const safeNext = next.startsWith("/") ? next : "/";
 
   const [intent, setIntent] = useState<Intent>(params.get("mode") === "signup" ? "signup" : "login");
-  const [step, setStep] = useState<Step>("email");
+  const [step, setStep] = useState<Step>("form");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState(params.get("error_description") ?? "");
-  const [noAccount, setNoAccount] = useState(false);
+  const [hint, setHint] = useState<"" | "no-account" | "exists" | "unconfirmed">("");
   const [captcha, setCaptcha] = useState<string | null>(null);
   const [captchaReset, setCaptchaReset] = useState(0);
-  const [cooldown, setCooldown] = useState(0);
   const onToken = useCallback((t: string | null) => setCaptcha(t), []);
-
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
 
   if (session) return <Navigate to={safeNext} replace />;
 
   const cleanEmail = email.trim().toLowerCase();
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail);
-  const switchIntent = (i: Intent) => { setIntent(i); setError(""); setNoAccount(false); setStep("email"); setCode(""); };
+  const reset = () => { setError(""); setHint(""); };
+  const switchIntent = (i: Intent) => { setIntent(i); setStep("form"); reset(); };
+  const takeCaptcha = () => {
+    const t = captcha ?? undefined;
+    setCaptcha(null);
+    setCaptchaReset((n) => n + 1);
+    return t;
+  };
 
   async function google() {
-    setError("");
+    reset();
     setBusy("google");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: appUrl(`/login?next=${encodeURIComponent(safeNext)}`) },
     });
-    if (error) {
-      setBusy(null);
-      setError(friendlyError(error));
-    }
+    if (error) { setBusy(null); setError(friendlyError(error)); }
   }
 
-  async function sendCode() {
-    setError("");
-    setNoAccount(false);
+  async function submit() {
+    reset();
     if (intent === "signup" && name.trim().length < 2) return setError("Please enter your name.");
     if (!validEmail) return setError("Please enter a valid email address.");
+    if (password.length < (intent === "signup" ? MIN_PASSWORD : 1)) {
+      return setError(intent === "signup" ? `Password must be at least ${MIN_PASSWORD} characters.` : "Please enter your password.");
+    }
     if (turnstileEnabled && !captcha) return setError("Please complete the check above.");
-    setBusy("send");
-    const { error } = await supabase.auth.signInWithOtp({
-      email: cleanEmail,
-      options: {
-        shouldCreateUser: intent === "signup",
-        data: intent === "signup" ? { full_name: name.trim() } : undefined,
-        emailRedirectTo: appUrl(`/login?next=${encodeURIComponent(safeNext)}`),
-        captchaToken: captcha ?? undefined,
-      },
-    });
-    setBusy(null);
-    setCaptcha(null);
-    setCaptchaReset((n) => n + 1);
-    if (error) {
-      // "Log in" with an email that has no account yet
-      if (intent === "login" && /signups? not allowed|not found|otp_disabled/i.test(`${error.message} ${(error as { code?: string }).code ?? ""}`)) {
-        setNoAccount(true);
-        return;
-      }
+    setBusy("submit");
+
+    if (intent === "login") {
+      const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password, options: { captchaToken: takeCaptcha() } });
+      setBusy(null);
+      if (!error) return; // the auth listener logs them in; <Navigate> above takes over
+      if (/invalid login credentials/i.test(error.message)) { setHint("no-account"); return setError("Wrong email or password."); }
+      if (/email not confirmed/i.test(error.message)) { setHint("unconfirmed"); return setError("Please confirm your email first. Check your inbox."); }
       return setError(friendlyError(error));
     }
-    setStep("code");
-    setCooldown(60);
+
+    const { data, error } = await supabase.auth.signUp({
+      email: cleanEmail,
+      password,
+      options: { data: { full_name: name.trim() }, emailRedirectTo: appUrl("/login"), captchaToken: takeCaptcha() },
+    });
+    setBusy(null);
+    if (error) {
+      if (/already registered|already exists/i.test(error.message)) { setHint("exists"); return setError("An account with this email already exists."); }
+      return setError(friendlyError(error));
+    }
+    // With "Confirm email" ON, Supabase hides whether the email is taken: an existing account comes back with no identities
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      setHint("exists");
+      return setError("An account with this email already exists.");
+    }
+    if (!data.session) setStep("confirm-email"); // "Confirm email" is ON: they must click the link first
   }
 
-  async function verifyCode() {
-    setError("");
-    setBusy("verify");
-    const { error } = await supabase.auth.verifyOtp({ email: cleanEmail, token: code.trim(), type: "email" });
+  async function sendReset() {
+    reset();
+    if (!validEmail) return setError("Please enter the email you signed up with.");
+    if (turnstileEnabled && !captcha) return setError("Please complete the check above.");
+    setBusy("forgot");
+    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo: appUrl("/reset-password"), captchaToken: takeCaptcha() });
+    setBusy(null);
+    if (error) return setError(friendlyError(error));
+    setStep("forgot-sent");
+  }
+
+  async function resendConfirmation() {
+    reset();
+    setBusy("resend");
+    const { error } = await supabase.auth.resend({ type: "signup", email: cleanEmail, options: { emailRedirectTo: appUrl("/login") } });
     setBusy(null);
     if (error) setError(friendlyError(error));
-    // success: the auth listener sets the session and <Navigate> above takes over
+    else setStep("confirm-email");
   }
 
-  async function passwordLogin() {
-    setError("");
-    if (!validEmail || !password) return setError("Enter your email and password.");
-    if (turnstileEnabled && !captcha) return setError("Please complete the check above.");
-    setBusy("password");
-    const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password, options: { captchaToken: captcha ?? undefined } });
-    setBusy(null);
-    setCaptcha(null);
-    setCaptchaReset((n) => n + 1);
-    if (error) setError(/invalid login/i.test(error.message) ? "Wrong email or password." : friendlyError(error));
-  }
-
-  const title = step === "code" ? "Check your email" : step === "password" ? "Staff login" : intent === "signup" ? "Create your account" : "Welcome back";
-  const subtitle =
-    step === "code" ? <>We sent a login code to <b className="text-ink">{cleanEmail}</b></>
-    : step === "password" ? "For store staff with a password from the admin."
-    : intent === "signup" ? "Join Green Basket to order fresh produce in minutes." : "Log in to see your basket and orders.";
+  const heading = {
+    form: intent === "signup" ? ["Create your account", "Join Green Basket and order fresh produce in minutes."] : ["Welcome back", "Log in to see your basket and orders."],
+    forgot: ["Reset your password", "Enter your email and we'll send you a link to set a new password."],
+    "forgot-sent": ["Check your email", `If an account exists for ${cleanEmail}, we've sent a password reset link.`],
+    "confirm-email": ["Confirm your email", `We sent a confirmation link to ${cleanEmail}. Open it on this device to finish creating your account.`],
+  }[step];
 
   return (
     <div className="mx-auto grid max-w-5xl overflow-hidden rounded-4xl bg-white shadow-soft ring-1 ring-line/60 md:grid-cols-2">
@@ -133,7 +138,7 @@ export default function Login() {
       <div className="px-6 py-10 sm:px-12 sm:py-12">
         <img src={asset("favicon.svg")} alt="" className="mb-6 h-12 w-12 rounded-2xl" />
 
-        {step === "email" && (
+        {step === "form" && (
           <div className="mb-6 grid grid-cols-2 rounded-full bg-surface p-1 text-sm font-semibold" role="tablist" aria-label="Log in or create account">
             {(["login", "signup"] as const).map((i) => (
               <button key={i} role="tab" aria-selected={intent === i} onClick={() => switchIntent(i)}
@@ -144,100 +149,118 @@ export default function Login() {
           </div>
         )}
 
-        <h1 className="text-3xl font-extrabold">{title}</h1>
-        <p className="mb-7 mt-1 text-ink-muted">{subtitle}</p>
+        <h1 className="text-3xl font-extrabold">{heading[0]}</h1>
+        <p className="mb-6 mt-1 text-ink-muted">{heading[1]}</p>
 
-        {step === "email" && (
+        {count > 0 && step === "form" && (
+          <p className="mb-5 flex items-center gap-2 rounded-2xl bg-brand-50 px-4 py-3 text-sm text-brand">
+            <Icon name="bag" size={18} /> Your {count} basket item{count === 1 ? "" : "s"} will be saved to your account.
+          </p>
+        )}
+
+        {step === "form" && (
           <div className="space-y-4">
             <button onClick={google} disabled={busy !== null}
               className="flex h-12 w-full items-center justify-center gap-3 rounded-full bg-white px-4 font-semibold text-ink ring-1 ring-inset ring-line transition hover:bg-surface disabled:opacity-60">
               <GoogleIcon />
-              {busy === "google" ? "Opening Google…" : intent === "signup" ? "Sign up with Google" : "Continue with Google"}
+              {busy === "google" ? "Opening Google…" : "Continue with Google"}
             </button>
 
             <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-ink-muted">
-              <span className="h-px flex-1 bg-line" /> or use email <span className="h-px flex-1 bg-line" />
+              <span className="h-px flex-1 bg-line" /> or with email <span className="h-px flex-1 bg-line" />
             </div>
 
-            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void sendCode(); }}>
+            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void submit(); }} noValidate>
               {intent === "signup" && (
                 <Field label="Your name">
-                  <input autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} placeholder="e.g. Asha Patel" />
+                  <input autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} placeholder="e.g. Asha Patel" />
                 </Field>
               )}
               <Field label="Email address">
-                <input type="email" inputMode="email" autoComplete="email" required value={email}
-                  onChange={(e) => { setEmail(e.target.value); setNoAccount(false); }} className={inputClass} placeholder="you@example.com" />
+                <input type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => { setEmail(e.target.value); setHint(""); }} className={inputClass} placeholder="you@example.com" />
               </Field>
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label htmlFor="pw" className="text-sm font-medium text-ink-soft">Password</label>
+                  {intent === "login" && (
+                    <button type="button" className="text-sm font-semibold text-brand" onClick={() => { setStep("forgot"); reset(); }}>Forgot password?</button>
+                  )}
+                </div>
+                <div className="relative">
+                  <input id="pw" type={showPassword ? "text" : "password"} autoComplete={intent === "signup" ? "new-password" : "current-password"}
+                    value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pr-16`}
+                    placeholder={intent === "signup" ? `At least ${MIN_PASSWORD} characters` : "Your password"} />
+                  <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute inset-y-0 right-3 my-auto h-8 rounded-full px-2 text-xs font-semibold text-ink-muted hover:text-ink">
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+                {intent === "signup" && password.length > 0 && password.length < MIN_PASSWORD && (
+                  <p className="mt-1 text-xs text-ink-muted">{MIN_PASSWORD - password.length} more character{MIN_PASSWORD - password.length === 1 ? "" : "s"}</p>
+                )}
+              </div>
               <Turnstile onToken={onToken} resetKey={captchaReset} />
 
-              {noAccount && (
-                <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
-                  <b>No account found for {cleanEmail}.</b>
-                  <p className="mt-1">New here? Create an account in a few seconds.</p>
-                  <Button type="button" variant="dark" className="mt-3" onClick={() => switchIntent("signup")}>Create account</Button>
-                </div>
-              )}
               <ErrorText>{error}</ErrorText>
+              {hint === "no-account" && (
+                <p className="text-sm text-ink-muted">New here? <button type="button" className="font-semibold text-brand" onClick={() => switchIntent("signup")}>Create an account</button> · or <button type="button" className="font-semibold text-brand" onClick={() => { setStep("forgot"); reset(); }}>reset your password</button></p>
+              )}
+              {hint === "exists" && (
+                <p className="text-sm text-ink-muted"><button type="button" className="font-semibold text-brand" onClick={() => switchIntent("login")}>Log in instead</button> · <button type="button" className="font-semibold text-brand" onClick={() => { setStep("forgot"); reset(); }}>Forgot password?</button></p>
+              )}
+              {hint === "unconfirmed" && (
+                <Button type="button" variant="secondary" loading={busy === "resend"} onClick={resendConfirmation}>Resend confirmation email</Button>
+              )}
 
-              <Button type="submit" size="lg" className="w-full" loading={busy === "send"}>
-                {intent === "signup" ? "Create account" : "Send login code"} <Icon name="arrowRight" size={18} />
+              <Button type="submit" size="lg" className="w-full" loading={busy === "submit"}>
+                {intent === "signup" ? "Create account" : "Log in"} <Icon name="arrowRight" size={18} />
               </Button>
-              <p className="text-center text-xs text-ink-muted">We'll email you a one-time code. No password needed.</p>
             </form>
 
-            <p className="pt-2 text-center text-sm text-ink-muted">
-              {intent === "login" ? <>New to Green Basket? <button className="font-semibold text-brand" onClick={() => switchIntent("signup")}>Create an account</button></>
+            <p className="pt-1 text-center text-sm text-ink-muted">
+              {intent === "login"
+                ? <>New to Green Basket? <button className="font-semibold text-brand" onClick={() => switchIntent("signup")}>Create an account</button></>
                 : <>Already have an account? <button className="font-semibold text-brand" onClick={() => switchIntent("login")}>Log in</button></>}
-            </p>
-            <p className="text-center text-sm">
-              <button className="font-medium text-ink-muted hover:text-ink" onClick={() => { setStep("password"); setError(""); }}>Staff? Log in with password</button>
             </p>
           </div>
         )}
 
-        {step === "code" && (
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void verifyCode(); }}>
-            <Field label="Login code">
-              <input inputMode="numeric" autoComplete="one-time-code" required maxLength={10} autoFocus placeholder="••••••"
-                value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                className={`${inputClass} text-center text-2xl font-bold tracking-[0.5em]`} />
+        {step === "forgot" && (
+          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void sendReset(); }} noValidate>
+            <Field label="Email address">
+              <input type="email" inputMode="email" autoComplete="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} placeholder="you@example.com" />
             </Field>
+            <Turnstile onToken={onToken} resetKey={captchaReset} />
             <ErrorText>{error}</ErrorText>
-            <Button type="submit" size="lg" className="w-full" loading={busy === "verify"} disabled={code.length < 6}>
-              {intent === "signup" ? "Verify and create account" : "Verify and log in"}
-            </Button>
-            <div className="rounded-2xl bg-surface p-3 text-xs text-ink-muted">
-              Can't find it? Check Spam/Promotions. If the email shows a button instead of a code, open it on <b>this same device and browser</b>. It logs you in too.
-            </div>
-            <div className="flex justify-between text-sm">
-              <button type="button" className="flex items-center gap-1 font-medium text-ink-muted hover:text-ink" onClick={() => { setStep("email"); setCode(""); setError(""); }}>
-                <Icon name="chevronLeft" size={16} /> Change email
-              </button>
-              <button type="button" className="font-semibold text-brand disabled:font-medium disabled:text-ink-muted" disabled={cooldown > 0 || busy !== null}
-                onClick={() => { setStep("email"); setCode(""); }}>
-                {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
-              </button>
-            </div>
+            <Button type="submit" size="lg" className="w-full" loading={busy === "forgot"}>Send reset link</Button>
+            <BackLink onClick={() => { setStep("form"); reset(); }} />
           </form>
         )}
 
-        {step === "password" && (
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void passwordLogin(); }}>
-            <Field label="Email"><input type="email" autoComplete="username" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} /></Field>
-            <Field label="Password"><input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} /></Field>
-            <Turnstile onToken={onToken} resetKey={captchaReset} />
+        {(step === "forgot-sent" || step === "confirm-email") && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 rounded-2xl bg-brand-50 p-4 text-sm text-ink-soft">
+              <Icon name="mail" size={20} className="mt-0.5 text-brand" />
+              <span>Open the email <b>on this same device and browser</b>. Can't find it? Check Spam or Promotions.</span>
+            </div>
             <ErrorText>{error}</ErrorText>
-            <Button type="submit" size="lg" className="w-full" loading={busy === "password"}>Log in</Button>
-            <button type="button" className="flex w-full items-center justify-center gap-1 text-sm font-medium text-ink-muted hover:text-ink" onClick={() => { setStep("email"); setError(""); }}>
-              <Icon name="chevronLeft" size={16} /> Back to customer login
-            </button>
-          </form>
+            {step === "confirm-email" && (
+              <Button variant="secondary" className="w-full" loading={busy === "resend"} onClick={resendConfirmation}>Resend email</Button>
+            )}
+            <BackLink onClick={() => { setStep("form"); setIntent("login"); reset(); }} label="Back to log in" />
+          </div>
         )}
 
         <p className="mt-8 text-xs text-ink-muted">By continuing you agree to our terms and privacy policy.</p>
       </div>
     </div>
+  );
+}
+
+function BackLink({ onClick, label = "Back" }: { onClick: () => void; label?: string }) {
+  return (
+    <button type="button" className="flex w-full items-center justify-center gap-1 text-sm font-medium text-ink-muted hover:text-ink" onClick={onClick}>
+      <Icon name="chevronLeft" size={16} /> {label}
+    </button>
   );
 }
 

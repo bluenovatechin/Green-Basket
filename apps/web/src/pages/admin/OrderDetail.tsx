@@ -9,6 +9,7 @@ import { friendlyError } from "../../lib/errors";
 import type { OrderStatus, Profile } from "../../lib/types";
 import { Button, Card, ErrorText, FullPageSpinner, inputClass, StatusBadge } from "../../components/ui";
 import { useIsAdmin } from "./AdminLayout";
+import { ADMIN_PATH } from "../../lib/base";
 
 const NEXT: Partial<Record<OrderStatus, { to: OrderStatus; label: string }[]>> = {
   placed: [{ to: "confirmed", label: "Confirm" }, { to: "packed", label: "Mark packed" }],
@@ -57,7 +58,7 @@ export default function AdminOrderDetail() {
   return (
     <div className="space-y-4">
       <div className="no-print flex flex-wrap items-center justify-between gap-2">
-        <button onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/admin/orders"))} className="text-sm font-medium text-ink-soft">← Back to orders</button>
+        <button onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(`${ADMIN_PATH}/orders`))} className="text-sm font-medium text-ink-soft">← Back to orders</button>
         <Button variant="secondary" onClick={() => window.print()}>Print packing slip</Button>
       </div>
 

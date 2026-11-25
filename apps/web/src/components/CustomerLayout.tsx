@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import { useAuth } from "../auth/AuthProvider";
 import { useCart } from "../state/cart";
 import { rupees } from "../lib/format";
-import { asset } from "../lib/base";
+import { asset, ADMIN_PATH } from "../lib/base";
 import Icon, { type IconName } from "./Icon";
 
 export function Logo({ to = "/" }: { to?: string }) {
@@ -18,7 +18,8 @@ export function Logo({ to = "/" }: { to?: string }) {
   );
 }
 
-export function AccountMenu() {
+/** area="shop": no staff links (the admin panel is never advertised in the shop). area="admin": full menu. */
+export function AccountMenu({ area = "shop" }: { area?: "shop" | "admin" }) {
   const { session, profile, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -63,13 +64,13 @@ export function AccountMenu() {
           <div className="px-3 pb-3 pt-2">
             <div className="truncate text-sm font-bold">{name}</div>
             <div className="truncate text-xs text-ink-muted">{profile?.email}</div>
-            {profile && profile.role !== "customer" && (
+            {area === "admin" && profile && profile.role !== "customer" && (
               <span className="mt-2 inline-block rounded-full bg-brand-light px-2 py-0.5 text-[11px] font-semibold capitalize text-brand">{profile.role}</span>
             )}
           </div>
           <div className="border-t border-line pt-1.5">
-            {(profile?.role === "admin" || profile?.role === "packer") && <MenuLink to="/admin" icon="grid" label="Admin panel" cls={item} />}
-            {(profile?.role === "rider" || profile?.role === "admin") && <MenuLink to="/rider" icon="bike" label="Rider screen" cls={item} />}
+            {area === "admin" && (profile?.role === "admin" || profile?.role === "packer") && <MenuLink to={`${ADMIN_PATH}`} icon="grid" label="Admin panel" cls={item} />}
+            {(profile?.role === "rider" || (area === "admin" && profile?.role === "admin")) && <MenuLink to="/rider" icon="bike" label="Rider screen" cls={item} />}
             <MenuLink to="/" icon="store" label="Shop" cls={item} />
             <MenuLink to="/orders" icon="package" label="My orders" cls={item} />
             <MenuLink to="/account" icon="user" label="Account & addresses" cls={item} />

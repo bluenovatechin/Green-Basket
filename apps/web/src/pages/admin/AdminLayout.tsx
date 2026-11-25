@@ -3,36 +3,37 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { AccountMenu, Logo } from "../../components/CustomerLayout";
 import Icon, { type IconName } from "../../components/Icon";
+import { ADMIN_PATH } from "../../lib/base";
 
 type NavItem = { to: string; label: string; icon: IconName; adminOnly?: boolean; end?: boolean };
 const GROUPS: { title: string; items: NavItem[] }[] = [
-  { title: "Overview", items: [{ to: "/admin", label: "Dashboard", icon: "grid", end: true }] },
+  { title: "Overview", items: [{ to: `${ADMIN_PATH}`, label: "Dashboard", icon: "grid", end: true }] },
   {
     title: "Sales",
     items: [
-      { to: "/admin/orders", label: "Orders", icon: "package" },
-      { to: "/admin/customers", label: "Customers", icon: "users", adminOnly: true },
+      { to: `${ADMIN_PATH}/orders`, label: "Orders", icon: "package" },
+      { to: `${ADMIN_PATH}/customers`, label: "Customers", icon: "users", adminOnly: true },
     ],
   },
   {
     title: "Catalogue",
     items: [
-      { to: "/admin/products", label: "Products & stock", icon: "leaf" },
-      { to: "/admin/prices", label: "Today's prices", icon: "tag", adminOnly: true },
+      { to: `${ADMIN_PATH}/products`, label: "Products & stock", icon: "leaf" },
+      { to: `${ADMIN_PATH}/prices`, label: "Today's prices", icon: "tag", adminOnly: true },
     ],
   },
   {
     title: "Operations",
     items: [
-      { to: "/admin/procurement", label: "Buying list", icon: "cart" },
-      { to: "/admin/slots", label: "Delivery slots", icon: "clock", adminOnly: true },
+      { to: `${ADMIN_PATH}/procurement`, label: "Buying list", icon: "cart" },
+      { to: `${ADMIN_PATH}/slots`, label: "Delivery slots", icon: "clock", adminOnly: true },
     ],
   },
   {
     title: "Settings",
     items: [
-      { to: "/admin/settings", label: "Store settings", icon: "settings", adminOnly: true },
-      { to: "/admin/staff", label: "Staff & roles", icon: "shield", adminOnly: true },
+      { to: `${ADMIN_PATH}/settings`, label: "Store settings", icon: "settings", adminOnly: true },
+      { to: `${ADMIN_PATH}/staff`, label: "Staff & roles", icon: "shield", adminOnly: true },
     ],
   },
 ];
@@ -87,7 +88,7 @@ export default function AdminLayout() {
             <Icon name="menu" size={22} />
           </button>
           <div className="flex items-center gap-2 lg:w-64 lg:px-6">
-            <Logo to="/admin" />
+            <Logo to={`${ADMIN_PATH}`} />
             <span className="rounded-full bg-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">Admin</span>
           </div>
         </div>
@@ -95,7 +96,7 @@ export default function AdminLayout() {
           <Link to="/" className="hidden h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold text-ink-soft hover:bg-surface sm:inline-flex">
             <Icon name="store" size={18} /> View store
           </Link>
-          <AccountMenu />
+          <AccountMenu area="admin" />
         </div>
       </header>
 
@@ -109,7 +110,7 @@ export default function AdminLayout() {
             <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
             <aside className="absolute inset-y-0 left-0 w-72 bg-white shadow-lift">
               <div className="flex h-16 items-center justify-between border-b border-line px-4">
-                <Logo to="/admin" />
+                <Logo to={`${ADMIN_PATH}`} />
                 <button className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-surface" onClick={() => setOpen(false)} aria-label="Close menu">
                   <Icon name="x" size={20} />
                 </button>

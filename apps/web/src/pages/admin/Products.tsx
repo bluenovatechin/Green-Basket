@@ -8,6 +8,7 @@ import { friendlyError } from "../../lib/errors";
 import type { Product, StockUnit } from "../../lib/types";
 import { Button, Card, ErrorText, Field, FullPageSpinner, inputClass } from "../../components/ui";
 import { useIsAdmin } from "./AdminLayout";
+import { ADMIN_PATH } from "../../lib/base";
 
 export function useAdminProducts() {
   return useQuery({
@@ -38,7 +39,7 @@ export default function Products() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold">Products & stock</h1>
-        {isAdmin && <Link to="/admin/products/new"><Button>+ New product</Button></Link>}
+        {isAdmin && <Link to={`${ADMIN_PATH}/products/new`}><Button>+ New product</Button></Link>}
       </div>
       <input className={inputClass} placeholder="Search products" value={search} onChange={(e) => setSearch(e.target.value)} />
 
@@ -56,7 +57,7 @@ export default function Products() {
                     <div className="flex items-center gap-2">
                       {p.image_url ? <img src={p.image_url} alt="" className="h-10 w-10 rounded-lg object-cover" /> : <div className="h-10 w-10 rounded-lg bg-brand-light" />}
                       <div>
-                        {isAdmin ? <Link to={`/admin/products/${p.id}`} className="font-semibold text-brand">{p.name}</Link> : <span className="font-semibold">{p.name}</span>}
+                        {isAdmin ? <Link to={`${ADMIN_PATH}/products/${p.id}`} className="font-semibold text-brand">{p.name}</Link> : <span className="font-semibold">{p.name}</span>}
                         {!p.is_active && <span className="ml-1 text-xs">(hidden)</span>}
                         <div className="text-xs text-ink-muted">{p.name_local}</div>
                       </div>

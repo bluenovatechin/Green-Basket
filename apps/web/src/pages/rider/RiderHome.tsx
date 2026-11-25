@@ -9,6 +9,7 @@ import { friendlyError } from "../../lib/errors";
 import type { Order } from "../../lib/types";
 import Icon from "../../components/Icon";
 import { Button, Card, Empty, ErrorText, FullPageSpinner, StatusBadge } from "../../components/ui";
+import { ADMIN_PATH } from "../../lib/base";
 
 // Simple phone screen for riders: today's assigned orders, call / map, start and complete delivery.
 // Subscribes to live order updates so newly assigned deliveries appear instantly.
@@ -55,7 +56,7 @@ export default function RiderHome() {
       <header className="sticky top-0 z-10 flex items-center justify-between bg-brand px-4 py-3 text-white">
         <span className="font-bold">My deliveries</span>
         <span className="space-x-3 text-sm">
-          {profile?.role === "admin" && <Link to="/admin" className="underline">Admin</Link>}
+          {profile?.role === "admin" && <Link to={`${ADMIN_PATH}`} className="underline">Admin</Link>}
           <button onClick={signOut} className="underline">Log out</button>
         </span>
       </header>

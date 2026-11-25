@@ -8,6 +8,7 @@ import type { OrderStatus, Product } from "../../lib/types";
 import { Card, FullPageSpinner } from "../../components/ui";
 import { useAuth } from "../../auth/AuthProvider";
 import Icon, { type IconName } from "../../components/Icon";
+import { ADMIN_PATH } from "../../lib/base";
 
 interface Summary {
   by_status: Partial<Record<OrderStatus, number>>;
@@ -48,7 +49,7 @@ export default function Dashboard() {
   if (summary.isLoading) return <FullPageSpinner />;
   const s = summary.data;
   const n = (st: OrderStatus) => s?.by_status?.[st] ?? 0;
-  const ordersUrl = (tab: string) => `/admin/orders?date=${date}&tab=${tab}`;
+  const ordersUrl = (tab: string) => `${ADMIN_PATH}/orders?date=${date}&tab=${tab}`;
   const hour = Number(new Date().toLocaleString("en-IN", { hour: "numeric", hour12: false, timeZone: "Asia/Kolkata" }));
   const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
@@ -56,7 +57,7 @@ export default function Dashboard() {
     n("placed") > 0 && { text: `${n("placed")} new order${n("placed") > 1 ? "s" : ""} to confirm`, to: ordersUrl("new"), tone: "brand" },
     n("confirmed") > 0 && { text: `${n("confirmed")} order${n("confirmed") > 1 ? "s" : ""} to pack`, to: ordersUrl("confirmed"), tone: "brand" },
     (unassigned.data ?? 0) > 0 && { text: `${unassigned.data} packed order${unassigned.data! > 1 ? "s" : ""} need a rider`, to: ordersUrl("packed"), tone: "amber" },
-    (lowStock.data?.length ?? 0) > 0 && { text: `${lowStock.data!.length} product${lowStock.data!.length > 1 ? "s" : ""} low on stock`, to: "/admin/products", tone: "amber" },
+    (lowStock.data?.length ?? 0) > 0 && { text: `${lowStock.data!.length} product${lowStock.data!.length > 1 ? "s" : ""} low on stock`, to: `${ADMIN_PATH}/products`, tone: "amber" },
     (s?.open_refunds ?? 0) > 0 && { text: `${s!.open_refunds} refund${s!.open_refunds > 1 ? "s" : ""} open`, to: ordersUrl("cancelled"), tone: "red" },
   ].filter(Boolean) as { text: string; to: string; tone: string }[];
 
@@ -99,10 +100,10 @@ export default function Dashboard() {
             </ul>
           )}
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Quick to="/admin/procurement" icon="cart" label="Buying list" />
-            <Quick to="/admin/prices" icon="tag" label="Update prices" />
-            <Quick to="/admin/products" icon="upload" label="Add stock" />
-            <Quick to="/admin/slots" icon="clock" label="Slots" />
+            <Quick to={`${ADMIN_PATH}/procurement`} icon="cart" label="Buying list" />
+            <Quick to={`${ADMIN_PATH}/prices`} icon="tag" label="Update prices" />
+            <Quick to={`${ADMIN_PATH}/products`} icon="upload" label="Add stock" />
+            <Quick to={`${ADMIN_PATH}/slots`} icon="clock" label="Slots" />
           </div>
         </Card>
 
@@ -125,7 +126,7 @@ export default function Dashboard() {
         <Card>
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-semibold">Low stock</h2>
-            <Link to="/admin/products" className="text-sm font-medium text-brand">Add stock →</Link>
+            <Link to={`${ADMIN_PATH}/products`} className="text-sm font-medium text-brand">Add stock →</Link>
           </div>
           <ul className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
             {lowStock.data.map((p) => (

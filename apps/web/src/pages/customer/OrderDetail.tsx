@@ -34,8 +34,9 @@ export default function OrderDetail() {
     const tick = async () => {
       tries++;
       try {
-        const r = await callFunction<{ status: OrderStatus }>("payment-status", { order_id: id });
-        if (r.status !== "pending_payment" || tries >= 10) {
+        const r = await callFunction<{ status: OrderStatus; sync: string }>("payment-status", { order_id: id });
+        // stop once PhonePe has a final answer (paid / failed), or after ~30 seconds
+        if (r.sync !== "pending" || tries >= 10) {
           setChecking(false);
           await qc.invalidateQueries({ queryKey: ["order", id] });
           if (r.status === "placed") setParams({ placed: "1" }, { replace: true });
@@ -65,6 +66,21 @@ export default function OrderDetail() {
     }
   }
 
+  async function switchToCod() {
+    setError("");
+    setBusy(true);
+    try {
+      await rpc("switch_to_cod", { p_order_id: o.id });
+      await qc.invalidateQueries({ queryKey: ["order", o.id] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      setParams({ placed: "1" }, { replace: true });
+    } catch (e) {
+      setError(friendlyError(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function cancel() {
     if (!confirm("Cancel this order? Items go back on sale and any payment is refunded.")) return;
     setError("");
@@ -85,6 +101,12 @@ export default function OrderDetail() {
   const items = o.order_items ?? [];
   const activeItems = items.filter((i) => !i.is_unavailable);
   const support = settings.data?.support_phone;
+  const s = settings.data;
+  const codPossible = Boolean(s?.cod_enabled && Number(o.total) <= Number(s.cod_max_amount));
+  const canPayOnlineNow = Boolean(
+    s?.online_payment_enabled && o.payment_method === "cod" && o.payment_status !== "paid" &&
+    ["placed", "confirmed", "packed", "out_for_delivery"].includes(o.status),
+  );
 
   return (
     <div className="mx-auto max-w-xl space-y-4 pb-6">
@@ -113,8 +135,18 @@ export default function OrderDetail() {
           ) : (
             <>
               <p className="font-semibold">Complete your payment</p>
-              <p className="text-sm text-ink-soft">Your items are held for {minutesLeft} more minute{minutesLeft === 1 ? "" : "s"}.</p>
-              <Button className="mt-3 w-full" loading={busy} onClick={pay} disabled={minutesLeft === 0}>Pay {rupees(o.total)} now</Button>
+              <p className="text-sm text-ink-soft">Your items are held for {minutesLeft} more minute{minutesLeft === 1 ? "" : "s"}. Choose how you'd like to pay:</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <Button loading={busy} onClick={pay} disabled={minutesLeft === 0}>
+                  <Icon name="wallet" size={18} /> Pay {rupees(o.total)} online
+                </Button>
+                {codPossible && (
+                  <Button variant="secondary" disabled={busy} onClick={switchToCod}>
+                    <Icon name="truck" size={18} /> Pay on delivery instead
+                  </Button>
+                )}
+              </div>
+              {codPossible && <p className="mt-2 text-xs text-ink-muted">"Pay on delivery" confirms your order now; pay the rider by cash or UPI.</p>}
             </>
           )}
         </Card>
@@ -133,10 +165,15 @@ export default function OrderDetail() {
         </Card>
         <Card className="text-sm">
           <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">Payment</div>
-          <div className="font-semibold">{o.payment_method === "cod" ? "Cash / UPI on delivery" : "Paid online (PhonePe)"}</div>
+          <div className="font-semibold">{o.payment_method === "cod" ? "Cash / UPI on delivery" : "Online (PhonePe)"}</div>
           <div className="mt-1 text-ink-soft">
-            {o.payment_status === "paid" ? "✓ Paid" : o.payment_method === "cod" ? `Pay ${rupees(o.total)} to the rider` : o.payment_status === "failed" ? "Not paid" : "Pending"}
+            {o.payment_status === "paid" ? "✓ Paid" : o.payment_method === "cod" ? `Pay ${rupees(o.total)} to the rider` : o.payment_status === "failed" ? "Not paid" : "Waiting for payment"}
           </div>
+          {canPayOnlineNow && (
+            <button onClick={pay} disabled={busy} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-light px-3 py-1.5 text-xs font-semibold text-brand hover:bg-brand hover:text-white disabled:opacity-50">
+              <Icon name="wallet" size={14} /> Pay online now instead
+            </button>
+          )}
         </Card>
       </div>
 

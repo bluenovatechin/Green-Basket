@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase";
 import { dayLabel, rupees, time12, todayIST } from "../../lib/format";
 import type { Order, OrderStatus, Slot } from "../../lib/types";
 import { Card, Empty, FullPageSpinner, inputClass, StatusBadge } from "../../components/ui";
+import { ADMIN_PATH } from "../../lib/base";
 
 // Tabs follow the real workflow: new -> confirmed -> packed -> on the way -> delivered
 const TABS: { key: string; label: string; statuses: OrderStatus[] }[] = [
@@ -109,7 +110,7 @@ export default function AdminOrders() {
           <ul className="divide-y divide-line md:hidden">
             {orders.data.map((o) => (
               <li key={o.id}>
-                <Link to={`/admin/orders/${o.id}`} className="block p-4 active:bg-surface">
+                <Link to={`${ADMIN_PATH}/orders/${o.id}`} className="block p-4 active:bg-surface">
                   <div className="flex items-center justify-between"><b>{o.order_number}</b><StatusBadge status={o.status} /></div>
                   <div className="mt-1 text-sm">{o.address.full_name} · {o.address.line2 || o.address.line1}</div>
                   <div className="mt-1 flex justify-between text-sm text-ink-soft">
@@ -126,7 +127,7 @@ export default function AdminOrders() {
             </thead>
             <tbody className="divide-y divide-line">
               {orders.data.map((o) => (
-                <tr key={o.id} className="cursor-pointer hover:bg-brand-light/40" onClick={() => navigate(`/admin/orders/${o.id}`)}>
+                <tr key={o.id} className="cursor-pointer hover:bg-brand-light/40" onClick={() => navigate(`${ADMIN_PATH}/orders/${o.id}`)}>
                   <td className="p-3 font-semibold text-brand">{o.order_number}</td>
                   <td className="p-3">{o.address.full_name}<div className="text-xs text-ink-muted">{o.address.line2 || o.address.line1} · {o.address.pincode}</div></td>
                   <td className="whitespace-nowrap p-3">{o.delivery_slots && `${time12(o.delivery_slots.start_time)}–${time12(o.delivery_slots.end_time)}`}</td>

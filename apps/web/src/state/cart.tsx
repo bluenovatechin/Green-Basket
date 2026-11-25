@@ -88,7 +88,8 @@ const getStorageKey = (userId?: string | null) => (userId ? `gb_cart_u_${userId}
               for (const item of guestLines) {
                 const idx = merged.findIndex((m) => m.variant_id === item.variant_id);
                 if (idx >= 0) {
-                  merged[idx] = { ...merged[idx], quantity: merged[idx].quantity + item.quantity };
+                  // same item in both baskets: add them up, but stay within the per-item limit (default 20)
+                  merged[idx] = { ...merged[idx], quantity: Math.min(merged[idx].quantity + item.quantity, 20) };
                 } else {
                   merged.push(item);
                 }

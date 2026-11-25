@@ -295,6 +295,68 @@ test("a fresh store can be claimed once; after that claiming is closed", async (
   await expectError(as(db, second, (tx) => tx.query("select public.claim_store_ownership()")), "STORE_ALREADY_CLAIMED");
 });
 
+test("switch online -> cash on delivery; a payment that completes afterwards just marks it paid", async () => {
+  const s = await setup();
+  const o = await placeOrder(s.db, s.customer, { addressId: s.addressId, slotId: s.slotId, method: "online", items: [{ variant_id: s.onion1kg, quantity: 4 }] });
+  const a = await as(s.db, "service", (tx) =>
+    tx.query("select public.create_payment_attempt($1, $2) as a", [o.order_id, s.customer]).then((r) => r.rows[0].a));
+
+  const stranger = await createUser(s.db);
+  await expectError(as(s.db, stranger, (tx) => tx.query("select public.switch_to_cod($1)", [o.order_id])), "ORDER_NOT_FOUND");
+
+  await as(s.db, s.customer, (tx) => tx.query("select public.switch_to_cod($1)", [o.order_id]));
+  const ord = (await s.db.query("select status, payment_method, payment_expires_at from public.orders where id = $1", [o.order_id])).rows[0];
+  assert.deepEqual(ord, { status: "placed", payment_method: "cod", payment_expires_at: null });
+  const mail = await s.db.query("select template from public.email_outbox");
+  assert.deepEqual(mail.rows.map((r) => r.template), ["order_placed"]);
+
+  // the switched order is never expired by the scheduler
+  await as(s.db, "service", (tx) => tx.query("select public.expire_stale_orders()"));
+  assert.equal((await s.db.query("select status from public.orders where id = $1", [o.order_id])).rows[0].status, "placed");
+
+  await expectError(as(s.db, s.customer, (tx) => tx.query("select public.switch_to_cod($1)", [o.order_id])), "ORDER_NOT_AWAITING_PAYMENT");
+
+  // the PhonePe attempt started before switching completes later -> order is simply marked paid (no cash to collect)
+  const r = await as(s.db, "service", (tx) =>
+    tx.query("select public.confirm_online_payment($1, 'PPX', '{}') as r", [a.merchant_order_id]).then((x) => x.rows[0].r));
+  assert.equal(r, "cod_prepaid");
+  const paid = (await s.db.query("select status, payment_method, payment_status from public.orders where id = $1", [o.order_id])).rows[0];
+  assert.deepEqual(paid, { status: "placed", payment_method: "online", payment_status: "paid" });
+  // a second, duplicate payment for the same order is refunded
+  const a2 = await s.db.query("insert into public.payments (order_id, merchant_order_id, amount) values ($1, 'DUP1', 160) returning merchant_order_id", [o.order_id]);
+  const dup = await as(s.db, "service", (tx) =>
+    tx.query("select public.confirm_online_payment($1, 'PPD', '{}') as r", [a2.rows[0].merchant_order_id]).then((x) => x.rows[0].r));
+  assert.equal(dup, "refund_created");
+});
+
+test("switch cash on delivery -> pay online; abandoning keeps the COD order", async () => {
+  const s = await setup();
+  const o = await placeOrder(s.db, s.customer, { addressId: s.addressId, slotId: s.slotId, items: [{ variant_id: s.onion1kg, quantity: 4 }] });
+
+  // first attempt abandoned / failed: order untouched
+  const a1 = await as(s.db, "service", (tx) =>
+    tx.query("select public.create_payment_attempt($1, $2) as a", [o.order_id, s.customer]).then((r) => r.rows[0].a));
+  await as(s.db, "service", (tx) => tx.query("select public.fail_online_payment($1, '{}')", [a1.merchant_order_id]));
+  let ord = (await s.db.query("select status, payment_method, payment_status from public.orders where id = $1", [o.order_id])).rows[0];
+  assert.deepEqual(ord, { status: "placed", payment_method: "cod", payment_status: "pending" });
+
+  // second attempt succeeds: now prepaid online, status unchanged
+  const a2 = await as(s.db, "service", (tx) =>
+    tx.query("select public.create_payment_attempt($1, $2) as a", [o.order_id, s.customer]).then((r) => r.rows[0].a));
+  const r = await as(s.db, "service", (tx) =>
+    tx.query("select public.confirm_online_payment($1, 'PPY', '{}') as r", [a2.merchant_order_id]).then((x) => x.rows[0].r));
+  assert.equal(r, "cod_prepaid");
+  ord = (await s.db.query("select status, payment_method, payment_status from public.orders where id = $1", [o.order_id])).rows[0];
+  assert.deepEqual(ord, { status: "placed", payment_method: "online", payment_status: "paid" });
+
+  // already paid: no more attempts
+  await expectError(as(s.db, "service", (tx) => tx.query("select public.create_payment_attempt($1, $2)", [o.order_id, s.customer])), "ORDER_NOT_AWAITING_PAYMENT");
+  // cancelling now refunds, because it was paid online
+  await as(s.db, s.customer, (tx) => tx.query("select public.cancel_order($1)", [o.order_id]));
+  const refund = await s.db.query("select amount::float from public.refunds where order_id = $1", [o.order_id]);
+  assert.equal(refund.rows[0].amount, 160);
+});
+
 test("email queue: claim, retry with back-off, then give up after 5 attempts", async () => {
   const s = await setup();
   await placeOrder(s.db, s.customer, { addressId: s.addressId, slotId: s.slotId, items: [{ variant_id: s.onion1kg, quantity: 4 }] });

@@ -44,9 +44,9 @@ export default function Account() {
     <div className="mx-auto max-w-xl space-y-4">
       <h1 className="text-xl font-bold">Your account</h1>
       <ClaimStoreBanner />
-      {profile && profile.role !== "customer" && (
-        <Link to={profile.role === "rider" ? "/rider" : "/admin"} className="block rounded-2xl bg-brand-light p-4 font-semibold text-brand">
-          Open {profile.role === "rider" ? "rider" : "admin"} screen →
+      {profile?.role === "rider" && (
+        <Link to="/rider" className="block rounded-2xl bg-brand-light p-4 font-semibold text-brand">
+          Open rider screen →
         </Link>
       )}
       <Card className="space-y-3">
