@@ -106,6 +106,7 @@ export default defineConfig(({ mode }) => {
       seoAndSecurity(env, base),
       VitePWA({
         registerType: "autoUpdate",
+        injectRegister: false, // registered in src/lib/pwa.ts, which also applies updates right away
         includeAssets: ["favicon.svg", "favicon.ico", "icons/apple-touch-icon.png", "icons/favicon-32x32.png", "icons/favicon-16x16.png"],
         manifest: {
           id: base,

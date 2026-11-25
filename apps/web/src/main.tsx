@@ -8,6 +8,7 @@ import App from "./App";
 import { categoriesQuery, productsQuery, settingsQuery } from "./lib/api";
 import { isAdminArea, isConfigured } from "./lib/supabase";
 import "./lib/install"; // listen for "install app" as early as possible
+import "./lib/pwa"; // keep the installed copy up to date
 import "./index.css";
 
 const queryClient = new QueryClient({

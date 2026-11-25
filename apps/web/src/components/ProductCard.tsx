@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "../lib/types";
 import { rupees } from "../lib/format";
@@ -29,7 +29,9 @@ export function ProductImage({ name, image_url, className = "", sizes = "(min-wi
   name: string; image_url?: string | null; className?: string; sizes?: string; priority?: boolean; decorative?: boolean;
 }) {
   const img = productImageSet({ name, image_url });
-  return img ? (
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [img?.src]);
+  return img && !failed ? (
     <img
       src={img.src}
       srcSet={img.srcSet}
@@ -40,6 +42,7 @@ export function ProductImage({ name, image_url, className = "", sizes = "(min-wi
       loading={priority ? "eager" : "lazy"}
       decoding="async"
       {...(priority ? { fetchpriority: "high" } : {})}
+      onError={() => setFailed(true)}
       className={`h-full w-full object-cover ${className}`}
     />
   ) : (
