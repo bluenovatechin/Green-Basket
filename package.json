@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "npm run dev -w apps/web",
     "build": "npm run build -w apps/web",
+    "deploy": "npm run deploy -w apps/web",
     "test:db": "node --test \"tests/*.test.mjs\"",
     "test": "npm run test:db && npm run build"
   },
