@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./auth/AuthProvider";
 import { CartProvider } from "./state/cart";
 import App from "./App";
+import "./lib/install"; // listen for "install app" as early as possible
 import "./index.css";
 
 const queryClient = new QueryClient({

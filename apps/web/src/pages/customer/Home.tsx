@@ -4,6 +4,7 @@ import { rupees, slotLabel } from "../../lib/format";
 import { categoryImage, heroImage } from "../../lib/images";
 import ActiveOrderBanner from "../../components/ActiveOrderBanner";
 import ClaimStoreBanner from "../../components/ClaimStoreBanner";
+import { InstallBanner } from "../../components/InstallApp";
 import ProductCard from "../../components/ProductCard";
 import Icon, { type IconName } from "../../components/Icon";
 import { Empty, FullPageSpinner } from "../../components/ui";
@@ -38,6 +39,7 @@ export default function Home() {
       <div className="space-y-3 empty:hidden">
         <ClaimStoreBanner />
         <ActiveOrderBanner />
+        <InstallBanner />
       </div>
 
       {/* Hero */}

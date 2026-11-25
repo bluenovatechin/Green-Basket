@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/AuthProvider";
 import { useAddresses, useSettings } from "../../lib/api";
 import ClaimStoreBanner from "../../components/ClaimStoreBanner";
+import { InstallCard } from "../../components/InstallApp";
 import { supabase } from "../../lib/supabase";
 import { friendlyError } from "../../lib/errors";
 import AddressForm from "../../components/AddressForm";
@@ -82,6 +83,7 @@ export default function Account() {
         {supportEmail && <a className="block text-brand" href={`mailto:${supportEmail}`}>Email support: {supportEmail}</a>}
         {supportEmail && <a className="block text-brand" href={`mailto:${supportEmail}?subject=Delete%20my%20account`}>Request account deletion</a>}
       </Card>
+      <InstallCard />
       <Button variant="secondary" className="w-full" onClick={signOut}>Log out</Button>
     </div>
   );
