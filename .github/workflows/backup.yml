@@ -1,0 +1,48 @@
+name: Weekly database backup to R2
+
+# Extra safety copy on top of Supabase's own daily backups (kept 7 days on Pro).
+# Repository secrets needed: SUPABASE_DB_URL (Session pooler connection string),
+# BACKUP_PASSPHRASE, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BACKUP_BUCKET
+
+on:
+  schedule:
+    - cron: "30 21 * * 6"   # Sunday 03:00 IST
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      CONFIGURED: ${{ secrets.SUPABASE_DB_URL != '' && secrets.BACKUP_PASSPHRASE != '' && secrets.R2_BACKUP_BUCKET != '' }}
+    steps:
+      - name: Skip if backup secrets are not set yet
+        if: env.CONFIGURED != 'true'
+        run: echo "::notice::Backup secrets not configured (see docs/SETUP.md step 8). Skipping."
+
+      - name: Dump database (custom format)
+        if: env.CONFIGURED == 'true'
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          docker run --rm -e DB_URL postgres:17 sh -c 'pg_dump "$DB_URL" --format=custom --no-owner --no-privileges --schema=public --schema=auth' > backup.dump
+          test -s backup.dump
+
+      - name: Encrypt (the dump contains customer data)
+        if: env.CONFIGURED == 'true'
+        env:
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$PASSPHRASE" --symmetric --cipher-algo AES256 -o backup.dump.gpg backup.dump
+          rm backup.dump
+
+      - name: Upload to Cloudflare R2
+        if: env.CONFIGURED == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          KEY="db/$(date -u +%Y-%m-%d).dump.gpg"
+          aws s3 cp backup.dump.gpg "s3://${{ secrets.R2_BACKUP_BUCKET }}/$KEY" \
+            --endpoint-url "https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com"
+          echo "Uploaded $KEY"

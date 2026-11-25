@@ -1,0 +1,25 @@
+# Supabase CLI config. Only the settings we rely on are listed; everything else uses CLI defaults.
+project_id = "green-basket"
+
+# The gateway's built-in JWT check doesn't work with Supabase's new API keys / JWT signing keys,
+# so every function verifies the caller itself:
+#   - user functions call requireUser() (checks the login token with Supabase Auth)
+#   - payment-webhook checks PhonePe's Authorization hash
+#   - workers check the x-cron-secret header
+[functions.payment-create]
+verify_jwt = false
+
+[functions.payment-status]
+verify_jwt = false
+
+[functions.product-image-upload]
+verify_jwt = false
+
+[functions.payment-webhook]
+verify_jwt = false
+
+[functions.payments-reconcile]
+verify_jwt = false
+
+[functions.email-worker]
+verify_jwt = false

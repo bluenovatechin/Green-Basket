@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { -webkit-tap-highlight-color: transparent; }
+body { @apply bg-gray-50 text-gray-900 antialiased; }
+
+/* Packing slips and the procurement list print cleanly */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+  .print-area { padding: 0 !important; border: 0 !important; }
+}
