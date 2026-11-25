@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /Green-Basket/cart
+Disallow: /Green-Basket/checkout
+Disallow: /Green-Basket/account
+Disallow: /Green-Basket/orders
+Disallow: /Green-Basket/login
+Disallow: /Green-Basket/reset-password
+Disallow: /Green-Basket/rider
+
+Sitemap: https://bluenovatechin.github.io/Green-Basket/sitemap.xml
